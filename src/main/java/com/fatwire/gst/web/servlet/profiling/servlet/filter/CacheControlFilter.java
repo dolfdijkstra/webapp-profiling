@@ -116,7 +116,7 @@ public class CacheControlFilter implements Filter {
 
     }
 
-    private int getCacheControlTTL(HttpServletRequest request) {
+    protected int getCacheControlTTL(HttpServletRequest request) {
         //here we are using the getPathInfo as the selector
         //other more advanced implementations are also possible
         if (request.getPathInfo() != null) {
