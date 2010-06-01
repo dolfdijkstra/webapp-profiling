@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -27,18 +28,18 @@ public class CacheControlFilter implements Filter {
 
     private static final String CACHE_CONTROL = "Cache-Control";
 
-    private Map<String, Integer> ttlMap = new HashMap<String, Integer>();
+    private Map<Pattern, Integer> ttlMap = new HashMap<Pattern, Integer>();
 
     public void destroy() {
-        // TODO Auto-generated method stub
-
+        ttlMap.clear();
     }
 
-    public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+    public void doFilter(final ServletRequest request,
+            ServletResponse response, FilterChain chain) throws IOException,
+            ServletException {
         if (response instanceof HttpServletResponse
                 && request instanceof HttpServletRequest) {
-            final int ttl = getCacheControlTTL((HttpServletRequest) request);
+
             chain.doFilter(request, new HttpServletResponseWrapper(
                     (HttpServletResponse) response) {
 
@@ -53,6 +54,7 @@ public class CacheControlFilter implements Filter {
                         cc = value;
                     } else if (cc == null
                             && "Last-Modified".equalsIgnoreCase(name)) {
+                        final int ttl = getCacheControlTTL((HttpServletRequest) request);
                         if (ttl > 0) {
                             super.setHeader(CACHE_CONTROL, "max-age=" + ttl);
                         }
@@ -83,7 +85,8 @@ public class CacheControlFilter implements Filter {
                 String s = null;
                 while ((s = reader.readLine()) != null) {
                     String[] parts = s.split("=");
-                    ttlMap.put(parts[0], Integer.parseInt(parts[1]));
+                    ttlMap.put(Pattern.compile(parts[0]), Integer
+                            .parseInt(parts[1]));
                     //ttlMap.put("FSII/Article/Full", 300);
                     //ttlMap.put("FSII/Document/Full", 900);
 
@@ -114,10 +117,14 @@ public class CacheControlFilter implements Filter {
     }
 
     private int getCacheControlTTL(HttpServletRequest request) {
-        //here we are using the pagename as the selector
+        //here we are using the getPathInfo as the selector
         //other more advanced implementations are also possible
-        if (request.getPathInfo() /*.getParameter("pagename") */!= null) {
-            return ttlMap.get(request.getPathInfo() /*.getParameter("pagename")*/);
+        if (request.getPathInfo() != null) {
+            for (Map.Entry<Pattern, Integer> e : ttlMap.entrySet()) {
+                if (e.getKey().matcher(request.getPathInfo()).matches()) {
+                    return e.getValue();
+                }
+            }
         }
         return -1;
     }
