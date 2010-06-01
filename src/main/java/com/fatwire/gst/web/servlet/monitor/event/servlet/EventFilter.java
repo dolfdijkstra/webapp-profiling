@@ -20,13 +20,17 @@ public class EventFilter extends HttpFilter implements Filter {
     protected void doFilter(final HttpServletRequest request,
             final HttpServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
-        final long start = System.currentTimeMillis();
-
-        chain.doFilter(request, response);
-        final FetchEvent event = new FetchEvent(request, start, System
-                .currentTimeMillis(), request.getRequestURL().toString());
-        listener.fetchPerformed(event);
-
+        final long start = listener != null ? System.currentTimeMillis() : 0;
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            if (start > 0) {
+                final FetchEvent event = new FetchEvent(request, start, System
+                        .currentTimeMillis(), request.getRequestURL()
+                        .toString());
+                listener.fetchPerformed(event);
+            }
+        }
     }
 
     /**
