@@ -4,10 +4,6 @@ import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -15,16 +11,21 @@ import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.fatwire.gst.web.servlet.profiling.jmx.UnregisterMBeansCommand;
 
 public class ResponseTimeRequestListener implements ServletRequestListener,
         ServletContextListener {
 
+    private final Log log = LogFactory.getLog(this.getClass());
+
     private static final String MBEAN_NAME = "com.fatwire.gst.web.servlet:type=ResponseTimeStatistic";
 
     private NameBuilder nameBuilder = new NameBuilder();
 
-    private ResponseTimeStatistic stat = new ResponseTimeStatistic();
+    private ResponseTimeStatistic root = new ResponseTimeStatistic();
 
     private ThreadLocal<Measurement> time = new ThreadLocal<Measurement>() {
 
@@ -48,7 +49,7 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
             Measurement m = time.get();
             m.stop();
 
-            stat.signal(request, m);
+            root.signal(request, m);
             String name = nameBuilder.extractName(request);
             ResponseTimeStatistic x = names.get(name);
             if (x == null) {
@@ -58,17 +59,8 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
                 try {
                     ManagementFactory.getPlatformMBeanServer().registerMBean(x,
                             ObjectName.getInstance(MBEAN_NAME + name));
-                } catch (InstanceAlreadyExistsException e) {
-                    event.getServletContext().log(e.getMessage(), e);
-                } catch (MBeanRegistrationException e) {
-                    event.getServletContext().log(e.getMessage(), e);
-                } catch (NotCompliantMBeanException e) {
-                    event.getServletContext().log(e.getMessage(), e);
-                } catch (MalformedObjectNameException e) {
-                    event.getServletContext().log(
-                            e.getMessage() + " for " + MBEAN_NAME + name, e);
-                } catch (NullPointerException e) {
-                    event.getServletContext().log(e.getMessage(), e);
+                } catch (Exception e) {
+                    log.warn(e.getMessage() + " for " + MBEAN_NAME + name, e);
                 }
             }
             x.signal(request, m);
@@ -88,29 +80,20 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
         try {
             UnregisterMBeansCommand.unregister(MBEAN_NAME + ",*");
         } catch (Exception e) {
-            sce.getServletContext().log(e.getMessage(), e);
+            log.warn(e.getMessage(), e);
         }
 
     }
 
     public void contextInitialized(ServletContextEvent sce) {
-        sce.getServletContext().log(
-                "contextInitialized "
-                        + sce.getServletContext().getServletContextName());
+        log.debug("contextInitialized "
+                + sce.getServletContext().getServletContextName());
         try {
 
-            ManagementFactory.getPlatformMBeanServer().registerMBean(stat,
+            ManagementFactory.getPlatformMBeanServer().registerMBean(root,
                     ObjectName.getInstance(MBEAN_NAME));
-        } catch (InstanceAlreadyExistsException e) {
-            sce.getServletContext().log(e.getMessage(), e);
-        } catch (MBeanRegistrationException e) {
-            sce.getServletContext().log(e.getMessage(), e);
-        } catch (NotCompliantMBeanException e) {
-            sce.getServletContext().log(e.getMessage(), e);
-        } catch (MalformedObjectNameException e) {
-            sce.getServletContext().log(e.getMessage(), e);
-        } catch (NullPointerException e) {
-            sce.getServletContext().log(e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         }
 
     }
