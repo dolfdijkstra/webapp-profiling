@@ -61,12 +61,11 @@ public class CacheManager implements CacheManagerMBean {
                         signal.wait(waitTime);
                     }
                     registerMBeans();
-                } catch (final InterruptedException e) {
-                    e.printStackTrace();
+                } catch (final Exception e) {
+                    log.warn(e.getMessage(),e);
                 }
 
             }
-
         }
 
         /**
@@ -74,16 +73,18 @@ public class CacheManager implements CacheManagerMBean {
          */
         @SuppressWarnings("unchecked")
         private void registerMBeans() {
+            if (stop) return;
             //TODO: deregistering of MBeans when ftTimedHashtable no longer exists
             final Set<String> hashNames = ftTimedHashtable.getAllCacheNames();
             for (final String hashName : hashNames) {
+                if (stop) break;
                 try {
 
                     final ObjectName name = new ObjectName(
                              "com.fatwire.gst.web.servlet:type=Cache,name="
                             + ObjectName.quote(hashName));
                     //log.debug(name);
-                    if (!server.isRegistered(name)) {
+                    if (server !=null && !server.isRegistered(name)) {
                         server.registerMBean(new CacheStats(hashName), name);
 
                     }
