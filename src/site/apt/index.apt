@@ -4,7 +4,8 @@ Introduction
   Some of the tools put information in the log file, other make them available through JMX beans. 
 
   How to enable JMX is explained {{{http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html}here}}. 
-  In most case it is enough to add two system properties to the startup command: <<<-Dcom.sun.management.jmxremote>>> and <<<com.sun.management.jmxremote.port=51115>>>. There is no port for JMX reserved by IANA.
+  In most case it is enough to add four system properties to the startup command: <<<-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=51115 -Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false>>>. <<Please read and understand the security warning at the JMX enablement page linked above>>.  There is no port for JMX reserved by IANA.
   
 Deployment
 
@@ -244,6 +245,7 @@ Cache-Control response header tools
   
   for instance
   <<</Satellite/FirstSite/.*=250>>>
+
 -------
   <filter>
     <filter-name>CacheControlFilter</filter-name>
