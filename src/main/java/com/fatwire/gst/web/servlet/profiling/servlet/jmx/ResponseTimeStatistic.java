@@ -19,9 +19,9 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
 
     private long maxTime = 0;
 
-    private volatile BigDecimal total = BigDecimal.valueOf(0);
+    private volatile BigDecimal total = BigDecimal.ZERO;
 
-    private volatile BigDecimal systemTotal = BigDecimal.valueOf(0);
+    private volatile BigDecimal systemTotal = BigDecimal.ZERO;
 
     public int getCount() {
         return counter.get();
