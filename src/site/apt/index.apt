@@ -1,0 +1,387 @@
+Introduction
+
+  This project is a collection of various servlet filters and listeners that help with collecting information about runtime performance.
+  Some of the tools put information in the log file, other make them available through JMX beans. 
+
+  How to enable JMX is explained {{{http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html}here}}. 
+  In most case it is enough to add two system properties to the startup command: <<<-Dcom.sun.management.jmxremote>>> and <<<com.sun.management.jmxremote.port=51115>>>. There is no port for JMX reserved by IANA.
+  
+Deployment
+
+  All of these tools are deployed through the web application. This means that changes need to be made to the web.xml file. Per tool I have added the instructions. On most cases you can just copy/past them into the 
+  correct location in the web.xml file and then restart the application server. Please make sure that the declarations are placed at the right location in the web.xml, otherwise the web application might not function anymore.
+  
+  All of the tools are packaged in a single jar file that can be downloaded {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/webapp-profiling/ }here}}      
+  
+  
+Status servlet filter
+  
+  ContentServer has no api to set http response status. Many customers believe that this is a severe limitation and this filter works around this limitation. It allows (outer) <<xml elements>> to set the http response status. 
+  Technically you can set the special header from any called xml element, as long as no jsp element has been called yet.  
+  
+
+  The header that needs to be set by the xml element is "X-Fatwire-Status". The most usefull usecases are for status <<<404>>> and <<<302>>>. For the <<<302>>> status also the 'Location' header needs to be specified.
+  Sample code would be \<ICS.STREAMHEADER NAME="X-Fatwire-Status" VALUE="404"/\>. In this case Satellite server will set the http response code to 404.  
+
+  Another header that is handled by this filter is "X-Fatwire-Header". The use case for this header is limited, as normal http headers can be set with ics.StreamHeader() or \<ICS.STREAMHEADER NAME="Header Name" VALUE="Header Value"/\>. Sample code for this header: \<ICS.STREAMHEADER NAME="X-Fatwire-Header" VALUE="foo|bar"/\>. 
+  At Satellite server the header foo with value bar will be set. 
+  
+  <<Warning>>: the implementation uses response.setStatus() and not response.sendError(). This might have implications for the invoking of error handlers defined in the web.xml. 
+
+  ~~com.fatwire.gst.web.servlet.httpstatus.CustomHeaderFilter
+  
+-------
+  <filter>
+    <filter-name>CustomHeaderFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.httpstatus.CustomHeaderFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>CustomHeaderFilter</filter-name>
+    <url-pattern>/Satellite/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+  
+Response time profilters
+  
+  Five different variants to profile for response times. Each with their benefit
+  
+    * TimerFilter: simplest
+    
+    * LoggerFilter: add sessionid to TimerFilter
+    
+    * ResponseTimeFilter: adds nesting for further granularity. More usefull at ContentServer than at Satellite servlet.
+    
+    * ResponseTimeRequestListener: provides statistical information, accessable via JMX
+    
+    * TimeDebugListener: parse in real time the contentserver time.debug message and makes statistics available via JMX.
+
+  	[]
+* TimerFilter
+  
+  Prints <<<elapsed ms for url>>> to the standard log for logger <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.TimerFilter>>> at DEBUG level.
+
+-------
+  <filter>
+    <filter-name>TimerFilter'</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.TimerFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>TimerFilter'</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+---------
+  
+  
+  
+
+
+
+* LoggerFilter
+  
+  Prints to the log <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.LoggerFilter>>> with INFO level: <<<sessionid | url in elapsed ms>>>.
+  Very usefull to take requests that take a long time, as well as to group requests based on session id.
+  
+--------
+  <filter>
+    <filter-name>LoggerFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.LoggerFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>LoggerFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+  
+* ResponseTimeFilter
+  
+  This is a filter that measures and logs servlet execution times and takes care of nesting.
+  This means that if one servlet (ContentServer) is calling another (a jsp element), each execution is logged seperately.
+  
+  The logging is done in a seperate thread to minimize runtime impact. Logfiles are stored in the web-app temp directory. The logs files are rolled each 1 million lines and on context startup.
+  
+  The log file is a tab seperated file with on each line: period, name, elapsed, level,counter.
+  
+  * period is an integer incremented each second since filter startup.
+  
+  * name is a dot seperated string with request.method.uri.pagename.jsp
+  
+  * elapsed is the execution time for this request
+  
+  * level is the nesting level of this request
+  
+  * counter is an incremental counter for the outermost request, so sub requests can be grouped together.
+  
+  []
+  
+-------
+  <filter>
+    <filter-name>ResponseTimeFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.ResponseTimeFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>ResponseTimeFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>FORWARD</dispatcher>
+    <dispatcher>REQUEST</dispatcher>
+    <dispatcher>INCLUDE</dispatcher>
+  </filter-mapping>
+---------
+
+  The filter takes a parameter called "specialParams". This is a semi-column seperated list of names that are used for addition to the name. Default values are "pagename" and "blobtable".
+  
+   
+* ResponseTimeRequestListener
+  
+  Adds averages for requests to JMX MBeans in the namespace <<<com.fatwire.gst.web.servlet:type=ResponseTimeStatistic>>>.
+  
+---------
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeRequestListener</listener-class>
+  </listener>
+--------
+  
+  
+* Time debug parser to JMX 
+  
+  The tools adds statistical information from ContentServer's time debug message to JMX beans. Log4J needs to be installed and configured for this to work. 
+  The beans have names with the namespace <<<com.fatwire.gst.web.servlet:type=StatFromTimeDebug>>>.
+  
+--------
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.logger.TimeDebugListener</listener-class>
+  </listener>
+---------
+
+~~experimental, not tested as a version that also works for out of the box logger. This is at this moment not complete, as the common-logging factory class needs to be written.
+~~com.fatwire.gst.web.servlet.profiling.logger.ft.TraditionalInterceptor
+  
+  
+CacheManager JMX tool
+  
+  This tools allows to inspect the status of the ContentServer resultset caches over JMX. 
+
+----------  
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.jmx.JmxActivator</listener-class>
+  </listener>
+----------  
+  
+  
+  
+Debug
+  
+* Simple debug for context start and stop
+  
+--------  
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.ContextLogger</listener-class>
+  </listener>
+--------  
+  
+* Simple debug for session logger
+
+  com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger
+
+-------  
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger</listener-class>
+  </listener>
+--------  
+  
+  
+  
+Cache-Control response header tools
+
+  These two tools add the Cache-Control http response header to responses. This is to help browser to cache the response. 
+  There are other ways to solve this with more granularity; these two ways are sometimes easier to implement.
+
+  * ExpiresFilter: simplest, just adds header based on filter url-pattern configuration. 
+
+  * CacheControlFilter: more granular control 
+
+  []
+  
+  These two filters are mutually exclusive; you should deploy only one variant.   
+
+* ExpiresFilter
+
+  Servlet Filter so set Cache-Control: max-age header
+
+-------------
+  <filter>
+     <description>Set Cache-Control:max-age header </description>
+     <filter-name>MaxAgeFilter</filter-name>
+     <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.ExpiresFilter</filter-class>
+     <init-param>
+         <description>Set max-age period, accepts 's','m','h' and 'd' as postfix.</description>
+         <param-name>period</param-name>
+         <param-value>5d</param-value>
+     </init-param>
+  </filter>
+  <filter-mapping>
+     <filter-name>MaxAgeFilter</filter-name>
+     <url-pattern>*.jpg</url-pattern>
+     <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+------------
+  
+  
+ * CacheControlFilter
+  
+  The configuration file at the 'uri' param if of the format
+  
+  <<<uri pattern=ttl in seconds>>>
+  
+  for instance
+  <<</Satellite/FirstSite/.*=250>>>
+-------
+  <filter>
+    <filter-name>CacheControlFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.CacheControlFilter</filter-class>
+    <init-param>
+      <param-name>uri</param-name>
+      <param-value>file://./cache-control.conf</param-value> <!-- in URI syntax -->
+    </init-param>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>CacheControlFilter</filter-name>
+    <url-pattern>/Satellite/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+    
+  
+  
+Various  
+  
+* DropConnectionHeaderFilter
+
+  Http servlet filter to drop the http response Connection header. 
+  If the web-app would set this header inappropriately 
+  this filter would help to let the servlet container manage the http connection.
+
+--------  
+  <filter>
+     <filter-name>DropConnectionHeaderFilter</filter-name>
+     <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.DropConnectionHeaderFilter</filter-class>
+  </filter>
+  <filter-mapping>
+     <filter-name>DropConnectionHeaderFilter</filter-name>
+     <url-pattern>/Satellite*</url-pattern>
+     <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+--------  
+  
+  
+* VersionListener
+  
+  Adds ContentServer version information to JMX beans under the name scope <<<com.fatwire.gst.web.servlet:type=Version>>>
+ 
+---------  
+  <listener>
+  	<listener-class>com.fatwire.gst.web.servlet.profiling.version.VersionListener</listener-class>
+  </listener>
+-------  
+  
+Debug
+  
+  
+* AccessLogFilter
+  
+  Prints detailed information to the log file on the http request as provided by the servlet container. Logger name is <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.AccessLogFilter>>>. 
+
+-------
+  <filter>
+    <filter-name>AccessLogFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.AccessLogFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>AccessLogFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+ * ContentServerDuplicateHeaderFilter
+  
+  Filters out some http response headers, when set by the servlet.
+  
+  config param: <<<black-list>>>; semi-colon seperated. Default values: 'date;server;content-length'. The 'black-list' values will be added to the default values.
+
+-------
+  <filter>
+    <filter-name>ContentServerDuplicateHeaderFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.ContentServerDuplicateHeaderFilter</filter-class>
+    <!--
+    <init-param>
+      <param-name>black-list</param-name>
+      <param-value>foo;foo1</param-value>
+    </init-param>
+    -->
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>ContentServerDuplicateHeaderFilter</filter-name>
+    <url-pattern>/Satellite/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+  
+ * HeaderStackTraceFilter
+  
+  prints a stack trace to the log file each time the servlet sets a response header or a cookie.
+
+-------
+  <filter>
+    <filter-name>HeaderStackTraceFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.HeaderStackTraceFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>HeaderStackTraceFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+ * RequestDumperFilter
+  
+  Shameless copy from apache-tomcat. Prints a lot of information on the received request. The logger name is <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.RequestDumperFilter>>> and it logs at TRACE level.
+  
+-------
+  <filter>
+    <filter-name>RequestDumperFilter</filter-name>
+    <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.RequestDumperFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+    <filter-name>RequestDumperFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+---------
+  
+  
+  
+~~Highly Experimental:
+  
+~~* com.fatwire.gst.web.servlet.profiling.servlet.filter.SessionLessSatelliteFilter
+  
+~~  This is an attempt to makde the remote satellite server stateless.
+  
