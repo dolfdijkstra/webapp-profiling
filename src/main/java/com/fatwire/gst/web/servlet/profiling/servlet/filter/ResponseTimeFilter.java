@@ -75,7 +75,8 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
     @Override
     public void destroy() {
         drain();
-        timer.cancel();
+        if (timer != null)
+            timer.cancel();
         timer = null;
         context = null;
 
@@ -88,18 +89,18 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
 
         final Hierarchy name = getName(request);
 
-        final Measurement t = new MeasurementImpl(name);
-        final int level = local.get().start();
+        final Measurement current = new MeasurementImpl(name);
+        final Nesting n = local.get();
+        final int level = n.start();
         try {
 
             chain.doFilter(request, response);
         } finally {
-            final Nesting n = local.get();
             n.stop();
 
-            t.stop();
-            final ResponseTimeEvent e = new ResponseTimeEvent(period, t
-                    .getStartTime(), name, t.elapsed() / 1000, level,
+            current.stop();
+            final ResponseTimeEvent e = new ResponseTimeEvent(period, current
+                    .getStartTime(), name, current.elapsed() / 1000, level,
                     n.counter, request.getRequestedSessionId(), request
                             .getRemoteAddr(), request.getRemotePort());
 
@@ -169,9 +170,9 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
         period++;
         int s = queue.size();
         if (s > 0) {
-            if (linesInFile > 1000000) {
+            if (System.currentTimeMillis() > this.nextRoll) {
                 roll();
-            } else if (System.currentTimeMillis() > this.nextRoll) {
+            } else if (linesInFile > 1000000) {
                 roll();
             }
             Writer w = null;
