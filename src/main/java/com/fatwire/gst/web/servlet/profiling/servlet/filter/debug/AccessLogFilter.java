@@ -53,15 +53,15 @@ public class AccessLogFilter extends RunOnceFilter {
             if (c != null && c.length > 0) {
                 for (int i = 0; i < c.length; i++) {
                     Cookie cookie = c[i];
+                    if (i > 0)
+                        b.append(";");
                     if (cookie != null) {
                         b.append(cookie.getName()).append("=").append(
-                                cookie.getValue()).append(sep);
+                                cookie.getValue());
                     }
                 }
-            } else {
-                b.append(sep);
-
             }
+            b.append(sep);
 
             b.append(request.getLocale()).append(sep);
 
@@ -73,15 +73,13 @@ public class AccessLogFilter extends RunOnceFilter {
 
             HttpSession s = request.getSession(false);
             if (s != null) {
-                b.append(s.getId()).append(sep);
-            } else {
-                b.append(sep);
+                b.append(s.getId());
             }
+            b.append(sep);
+
             Principal p = request.getUserPrincipal();
             if (p != null) {
-                b.append(p.getName()).append(sep);
-            } else {
-                b.append(sep);
+                b.append(p.getName());
             }
             log.info(b.toString());
         }
