@@ -34,9 +34,9 @@ public class SessionLogger implements HttpSessionAttributeListener,
 
     private final HttpSessionActivationListener distributionListener = new MyHttpSessionActivationListener();
 
-    private class MyHttpSessionActivationListener implements
+    private static class MyHttpSessionActivationListener implements
             HttpSessionActivationListener, java.io.Serializable {
-
+        private static final Log log = LogFactory.getLog(SessionLogger.class);
         /**
          * 
          */
