@@ -1,20 +1,93 @@
 package com.fatwire.gst.web.servlet.profiling.version;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+
+import javax.servlet.ServletContext;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.fatwire.cs.core.util.BuildBase;
 
 public class ProductInfoFactory {
+    private final Log log = LogFactory.getLog(this.getClass());
+
     private final List<ProductInfo> productInfo = new LinkedList<ProductInfo>();;
 
-    public List<ProductInfo> createList() {
+    public List<ProductInfo> createList(ServletContext context) {
+        if (!productInfo.isEmpty())
+            return productInfo;
 
+        for (Object o : context.getResourcePaths("/WEB-INF/lib/")) {
+            String path = (String) o;
+            if (path.toLowerCase().endsWith(".jar")) {
+                log.debug("checking " + path + " for FBuild classes");
+                String jarName = path.substring("/WEB-INF/lib/".length());
+                JarInputStream j = null;
+                try {
+                    j = new JarInputStream(context.getResourceAsStream(path));
+
+                    JarEntry je = null;
+                    while ((je = j.getNextJarEntry()) != null) {
+                        String name = je.getName();
+                        if (name.toLowerCase().endsWith("fbuild.class")) {
+                            collectClass(path, jarName, name);
+                        }
+                    }
+                } catch (Exception e2) {
+                    log.warn(e2.getMessage() + " for " + path);
+                } finally {
+                    if (j != null)
+                        try {
+                            j.close();
+                        } catch (IOException e) {
+                            //ignore
+                        }
+                }
+            }
+        }
+        return productInfo;
+    }
+
+    private void collectClass(String path, String jarName, String name) {
+        try {
+            String className = name
+                    .replace('/', '.')
+                    .substring(0, name.lastIndexOf(".") - 1);
+            Class<?> c = Class.forName(className, false,
+                    Thread.currentThread()
+                            .getContextClassLoader());
+            if (BuildBase.class.isAssignableFrom(c)) {
+                log.debug("found " + c.getName() + " in "
+                        + path);
+                try {
+                    ProductInfo p = new ProductInfo(c
+                            .getPackage().getName(),
+                            jarName, c);
+                    this.productInfo.add(p);
+                } catch (Exception e) {
+                    //ignore
+                }
+
+            }
+
+        } catch (ClassNotFoundException e1) {
+            //ignore
+        }
+    }
+
+    public List<ProductInfo> createList() {
         if (!productInfo.isEmpty())
             return productInfo;
 
         addProductInfo("Content Server", "cs.jar",
                 "COM.FutureTense.Util.FBuild");
         addProductInfo("Content Server", "cs-core.jar",
-                "com.fatwire.gst.web.servlet.core.util.FBuild");
+                "com.fatwire.cs.core.util.FBuild");
         addProductInfo("Content Server", "sseed.jar",
                 "com.fatwire.sseed.util.FBuild");
         addProductInfo("Content Server", "FTLDAP.jar",
@@ -72,7 +145,6 @@ public class ProductInfoFactory {
                 "com.fatwire.sserve.util.FBuild");
         return productInfo;
     }
-
 
     private void addProductInfo(String s, String s2, String s3) {
         try {

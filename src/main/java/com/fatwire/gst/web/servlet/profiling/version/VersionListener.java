@@ -17,33 +17,39 @@ import com.fatwire.gst.web.servlet.profiling.jmx.UnregisterMBeansCommand;
 public class VersionListener implements ServletContextListener {
     private final Log log = LogFactory.getLog(this.getClass());
 
-    private final List<ProductInfo> productInfo = new LinkedList<ProductInfo>();
-
     public void contextDestroyed(ServletContextEvent sce) {
         try {
-            UnregisterMBeansCommand.unregister("com.fatwire.gst.web.servlet:type=Version,*");
+            UnregisterMBeansCommand
+                    .unregister("com.fatwire.gst.web.servlet:type=Version,*");
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }
 
     }
 
-    public void contextInitialized(ServletContextEvent sce) {
+    public void contextInitialized(final ServletContextEvent sce) {
+        new Thread(new Runnable() {
 
-        productInfo.clear();
-        ProductInfoFactory f = new ProductInfoFactory();
-        productInfo.addAll(f.createList());
-        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-        for (ProductInfo info : productInfo) {
-            try {
-                server.registerMBean(info, new ObjectName(
-                        "com.fatwire.gst.web.servlet:type=Version,product="
-                                + info.getProductName() + ",jar="
-                                + info.getProductJar()));
-            } catch (Throwable e) {
-                log.error(e.getMessage(), e);
+            public void run() {
+                List<ProductInfo> productInfo = new LinkedList<ProductInfo>();
+
+                ProductInfoFactory f = new ProductInfoFactory();
+                productInfo.addAll(f.createList(sce.getServletContext()));
+                MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+                for (ProductInfo info : productInfo) {
+                    try {
+                        server.registerMBean(info, new ObjectName(
+                                "com.fatwire.gst.web.servlet:type=Version,product="
+                                        + info.getProductName() + ",jar="
+                                        + info.getProductJar()));
+                    } catch (Throwable e) {
+                        log.error(e.getMessage(), e);
+                    }
+                }
+
             }
-        }
+
+        }).start();
 
     }
 

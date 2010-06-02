@@ -33,13 +33,21 @@ public class ProductInfo implements ProductInfoMBean {
         this.productName = productName;
         this.productJar = productJar;
         this.productVersionInfoClass = productVersionInfoClass;
-        collectVersion();
+        collectVersion(Class.forName(productVersionInfoClass,true,Thread.currentThread().getContextClassLoader()));
+    }
+    public ProductInfo(final String productName, final String productJar,
+            final Class<?> clazz) throws Exception {
+        super();
+        this.productName = productName;
+        this.productJar = productJar;
+        this.productVersionInfoClass = clazz.getName();
+        collectVersion(clazz);
     }
 
-    private void collectVersion() throws Exception {
+    private void collectVersion(final Class<?> clazz) throws Exception {
 
         String version = null;
-        final Class<?> clazz = Class.forName(getProductVersionInfoClass());
+        
         if (BuildBase.class.isAssignableFrom(clazz)) {
             final Object o = clazz.newInstance();
             if (o instanceof BuildBase) {
