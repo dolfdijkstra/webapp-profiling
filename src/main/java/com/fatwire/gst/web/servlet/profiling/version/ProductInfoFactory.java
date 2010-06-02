@@ -34,11 +34,12 @@ public class ProductInfoFactory {
                     JarEntry je = null;
                     while ((je = j.getNextJarEntry()) != null) {
                         String name = je.getName();
+                        log.trace("checking " + path + "  " + name);
                         if (name.toLowerCase().endsWith("fbuild.class")) {
                             collectClass(path, jarName, name);
                         }
                     }
-                } catch (Exception e2) {
+                } catch (Throwable e2) {
                     log.warn(e2.getMessage() + " for " + path);
                 } finally {
                     if (j != null)
@@ -57,8 +58,9 @@ public class ProductInfoFactory {
         try {
             String className = name
                     .replace('/', '.')
-                    .substring(0, name.lastIndexOf(".") - 1);
-            Class<?> c = Class.forName(className, false,
+                    .substring(0, name.lastIndexOf("."));
+            log.trace("checking " + path + "  " + className);
+            Class<?> c = Class.forName(className, true,
                     Thread.currentThread()
                             .getContextClassLoader());
             if (BuildBase.class.isAssignableFrom(c)) {
@@ -68,15 +70,18 @@ public class ProductInfoFactory {
                     ProductInfo p = new ProductInfo(c
                             .getPackage().getName(),
                             jarName, c);
+                    log.info(p.getProductJar() + " " + p.getVersion());
                     this.productInfo.add(p);
                 } catch (Exception e) {
                     //ignore
+                    log.trace(e.getMessage(),e);
                 }
 
             }
 
-        } catch (ClassNotFoundException e1) {
+        } catch (Exception e1) {
             //ignore
+            log.trace(e1.getMessage(),e1);
         }
     }
 

@@ -39,9 +39,9 @@ public class VersionListener implements ServletContextListener {
                 for (ProductInfo info : productInfo) {
                     try {
                         server.registerMBean(info, new ObjectName(
-                                "com.fatwire.gst.web.servlet:type=Version,product="
-                                        + info.getProductName() + ",jar="
-                                        + info.getProductJar()));
+                                "com.fatwire.gst.web.servlet:type=Version,jar="
+                                        + info.getProductJar() +",product="
+                                        + info.getProductName() ));
                     } catch (Throwable e) {
                         log.error(e.getMessage(), e);
                     }
