@@ -32,6 +32,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Example filter that dumps interesting state information about a request
  * to the associated servlet context log file, before allowing the servlet
@@ -43,6 +46,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 
 public final class RequestDumperFilter implements Filter {
+
+    private Log log = LogFactory.getLog(RequestDumperFilter.class);
 
     // ----------------------------------------------------- Instance Variables
 
@@ -80,81 +85,89 @@ public final class RequestDumperFilter implements Filter {
 
         if (filterConfig == null)
             return;
-
-        // Render the generic servlet request properties
-        StringWriter sw = new StringWriter();
-        PrintWriter writer = new PrintWriter(sw);
-        writer.println("Request Received at "
-                + (new Timestamp(System.currentTimeMillis())));
-        writer.println(" characterEncoding=" + request.getCharacterEncoding());
-        writer.println("     contentLength=" + request.getContentLength());
-        writer.println("       contentType=" + request.getContentType());
-        writer.println("            locale=" + request.getLocale());
-        writer.print("           locales=");
-        Enumeration<Locale> locales = request.getLocales();
-        boolean first = true;
-        while (locales.hasMoreElements()) {
-            Locale locale = (Locale) locales.nextElement();
-            if (first)
-                first = false;
-            else
-                writer.print(", ");
-            writer.print(locale.toString());
-        }
-        writer.println();
-        for (Enumeration<String> names = request.getParameterNames(); names
-                .hasMoreElements();) {
-            String name = (String) names.nextElement();
-            writer.print("         parameter=" + name + "=");
-            String values[] = request.getParameterValues(name);
-            for (int i = 0; i < values.length; i++) {
-                if (i > 0)
+        if (log.isTraceEnabled()) {
+            // Render the generic servlet request properties
+            StringWriter sw = new StringWriter();
+            PrintWriter writer = new PrintWriter(sw);
+            writer.println("Request Received at "
+                    + (new Timestamp(System.currentTimeMillis())));
+            writer.println(" characterEncoding="
+                    + request.getCharacterEncoding());
+            writer.println("     contentLength=" + request.getContentLength());
+            writer.println("       contentType=" + request.getContentType());
+            writer.println("            locale=" + request.getLocale());
+            writer.print("           locales=");
+            Enumeration<Locale> locales = request.getLocales();
+            boolean first = true;
+            while (locales.hasMoreElements()) {
+                Locale locale = (Locale) locales.nextElement();
+                if (first)
+                    first = false;
+                else
                     writer.print(", ");
-                writer.print(values[i]);
+                writer.print(locale.toString());
             }
             writer.println();
-        }
-        writer.println("          protocol=" + request.getProtocol());
-        writer.println("        remoteAddr=" + request.getRemoteAddr());
-        writer.println("        remoteHost=" + request.getRemoteHost());
-        writer.println("            scheme=" + request.getScheme());
-        writer.println("        serverName=" + request.getServerName());
-        writer.println("        serverPort=" + request.getServerPort());
-        writer.println("          isSecure=" + request.isSecure());
-
-        // Render the HTTP servlet request properties
-        if (request instanceof HttpServletRequest) {
-            writer.println("---------------------------------------------");
-            HttpServletRequest hrequest = (HttpServletRequest) request;
-            writer.println("       contextPath=" + hrequest.getContextPath());
-            Cookie cookies[] = hrequest.getCookies();
-            if (cookies == null)
-                cookies = new Cookie[0];
-            for (int i = 0; i < cookies.length; i++) {
-                writer.println("            cookie=" + cookies[i].getName()
-                        + "=" + cookies[i].getValue());
-            }
-            for (Enumeration<String> names = hrequest.getHeaderNames(); names
+            for (Enumeration<String> names = request.getParameterNames(); names
                     .hasMoreElements();) {
                 String name = (String) names.nextElement();
-                String value = hrequest.getHeader(name);
-                writer.println("            header=" + name + "=" + value);
+                writer.print("         parameter=" + name + "=");
+                String values[] = request.getParameterValues(name);
+                for (int i = 0; i < values.length; i++) {
+                    if (i > 0)
+                        writer.print(", ");
+                    writer.print(values[i]);
+                }
+                writer.println();
             }
-            writer.println("            method=" + hrequest.getMethod());
-            writer.println("          pathInfo=" + hrequest.getPathInfo());
-            writer.println("       queryString=" + hrequest.getQueryString());
-            writer.println("        remoteUser=" + hrequest.getRemoteUser());
-            writer.println("requestedSessionId="
-                    + hrequest.getRequestedSessionId());
-            writer.println("        requestURI=" + hrequest.getRequestURI());
-            writer.println("       servletPath=" + hrequest.getServletPath());
+            writer.println("          protocol=" + request.getProtocol());
+            writer.println("        remoteAddr=" + request.getRemoteAddr());
+            writer.println("        remoteHost=" + request.getRemoteHost());
+            writer.println("            scheme=" + request.getScheme());
+            writer.println("        serverName=" + request.getServerName());
+            writer.println("        serverPort=" + request.getServerPort());
+            writer.println("          isSecure=" + request.isSecure());
+
+            // Render the HTTP servlet request properties
+            if (request instanceof HttpServletRequest) {
+                writer.println("---------------------------------------------");
+                HttpServletRequest hrequest = (HttpServletRequest) request;
+                writer.println("       contextPath="
+                        + hrequest.getContextPath());
+                Cookie cookies[] = hrequest.getCookies();
+                if (cookies == null)
+                    cookies = new Cookie[0];
+                for (int i = 0; i < cookies.length; i++) {
+                    writer.println("            cookie=" + cookies[i].getName()
+                            + "=" + cookies[i].getValue());
+                }
+                for (Enumeration<String> names = hrequest.getHeaderNames(); names
+                        .hasMoreElements();) {
+                    String name = (String) names.nextElement();
+                    String value = hrequest.getHeader(name);
+                    writer.println("            header=" + name + "=" + value);
+                }
+                writer.println("            method=" + hrequest.getMethod());
+                writer.println("          pathInfo=" + hrequest.getPathInfo());
+                writer.println("       queryString="
+                        + hrequest.getQueryString());
+                writer
+                        .println("        remoteUser="
+                                + hrequest.getRemoteUser());
+                writer.println("requestedSessionId="
+                        + hrequest.getRequestedSessionId());
+                writer
+                        .println("        requestURI="
+                                + hrequest.getRequestURI());
+                writer.println("       servletPath="
+                        + hrequest.getServletPath());
+            }
+            writer.println("=============================================");
+
+            // Log the resulting string
+            writer.flush();
+            log.trace(sw.getBuffer().toString());
         }
-        writer.println("=============================================");
-
-        // Log the resulting string
-        writer.flush();
-        filterConfig.getServletContext().log(sw.getBuffer().toString());
-
         // Pass control on to the next filter
         chain.doFilter(request, response);
 
