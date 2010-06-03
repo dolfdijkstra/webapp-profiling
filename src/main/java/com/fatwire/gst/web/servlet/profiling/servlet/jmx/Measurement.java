@@ -7,6 +7,15 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
+/**
+ * <p>Class to take a measurement. It is an advanced stopwatch. It records elapsed time, as well as cpu user time, thread block and wait counts that happend during the measurement period.</p>
+ * 
+ * 
+ * <p>This class is not thread-safe. It should be used (by design) in only one thread.</p>
+ * 
+ * @author Dolf.Dijkstra
+ * 
+ */
 public class Measurement {
 
     private enum RunningState {
@@ -50,19 +59,14 @@ public class Measurement {
 
     public Measurement(boolean time, boolean count) {
         threadMXBean = ManagementFactory.getThreadMXBean();
-        //System.out.println(threadMXBean.isCurrentThreadCpuTimeSupported());
         if (time && threadMXBean.isCurrentThreadCpuTimeSupported()) {
-            //System.out.println("isThreadCpuTimeEnabled: "+threadMXBean.isThreadCpuTimeEnabled());
             if (!threadMXBean.isThreadCpuTimeEnabled()) {
                 threadMXBean.setThreadCpuTimeEnabled(true);
             }
             meaureCpuTime = threadMXBean.isCurrentThreadCpuTimeSupported();
-            //System.out.println("isThreadCpuTimeEnabled: "+threadMXBean.isThreadCpuTimeEnabled());
 
         }
-        //System.out.println("isThreadContentionMonitoringSupported: "+threadMXBean.isThreadContentionMonitoringSupported());
         if (count && threadMXBean.isThreadContentionMonitoringSupported()) {
-            //System.out.println("isThreadContentionMonitoringEnabled: "+threadMXBean.isThreadContentionMonitoringEnabled());
             if (!threadMXBean.isThreadContentionMonitoringEnabled()) {
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
             }
@@ -90,19 +94,13 @@ public class Measurement {
         this.startTime = System.nanoTime();
         if (meaureCpuTime) {
             startUserTime = threadMXBean.getCurrentThreadUserTime();
-            //System.out.println("getCurrentThreadUserTime: "
-            //        + threadMXBean.getCurrentThreadUserTime());
             startCpuTime = threadMXBean.getCurrentThreadCpuTime();
-            //System.out.println("getCurrentThreadCpuTime: "
-            //       + threadMXBean.getCurrentThreadCpuTime());
         }
         if (measureCount) {
             ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread()
                     .getId());
             startBlockedCount = info.getBlockedCount();
             startWaitCount = info.getWaitedCount();
-            //System.out.println("blocked count: " + info.getBlockedCount());
-            //System.out.println("waited count: " + info.getWaitedCount());
         }
 
     }
@@ -118,26 +116,19 @@ public class Measurement {
         this.endTime = System.nanoTime();
         if (meaureCpuTime) {
             endUserTime = threadMXBean.getCurrentThreadUserTime();
-            //System.out.println("end getCurrentThreadUserTime: "
-            //        + threadMXBean.getCurrentThreadUserTime());
 
             endCpuTime = threadMXBean.getCurrentThreadCpuTime();
-            //            System.out.println("end getCurrentThreadCpuTime: "
-            //                    + threadMXBean.getCurrentThreadCpuTime());
             if (this.measureCount) {
                 ThreadInfo info = threadMXBean.getThreadInfo(Thread
                         .currentThread().getId());
                 endBlockedCount = info.getBlockedCount();
                 endWaitCount = info.getWaitedCount();
-                //            System.out.println("end blocked count: " + endBlockedCount);
-                //            System.out.println("waited count: " + info.getWaitedCount());
             }
         }
 
     }
 
     /**
-     * 
      * 
      * @return the number of nanoseconds elapsed between start and stop
      */
