@@ -1,17 +1,37 @@
 Introduction
 
-  This project is a collection of various servlet filters and listeners that help with collecting information about runtime performance.
+  This project is a collection of various servlet filters and listeners that help collecting information about runtime performance of your ContentServer installation.
   Some of the tools put information in the log file, other make them available through JMX beans. 
 
+* JMX 
+ 
   How to enable JMX is explained {{{http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html}here}}. 
-  In most case it is enough to add four system properties to the startup command: <<<-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=51115 -Dcom.sun.management.jmxremote.authenticate=false
--Dcom.sun.management.jmxremote.ssl=false>>>. <<Please read and understand the security warning at the JMX enablement page linked above>>.  There is no port for JMX reserved by IANA.
+  In most case it is enough to add four system properties to the startup command: 
+  <<<-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=51115 -Dcom.sun.management.jmxremote.authenticate=false
+  -Dcom.sun.management.jmxremote.ssl=false>>>.  There is no port for JMX reserved by IANA. 
+  When jconsole does not want to connect to a remote server because the RMI server does not bind to the correct ip address, it might help to add <<<-Djava.rmi.server.hostname=your_server_ip>>>
+  to the startup line. 
+
+  <<Please read and understand the security warning at the JMX enablement page linked above>>. The options provied above are not secure. They are provided to get you started.
+  
+  JMX has several features, for instance that the beans are queryable and can be found in a single repository. It is easy to write a jsp that 
+  displays information on one or more JMX beans.
+  
+  With {{{http://java.sun.com/developer/technicalArticles/J2SE/jconsole.html}JConsole}} or {{{http://java.sun.com/javase/6/docs/technotes/tools/share/jvisualvm.html}jvisualvm with jmx beans extension}} beans can also be inspected remotely.
+  
+  Another big advantage that several monitoring applications have JMX support, like {{{http://www.cacti.net/}cacti}} or {{{http://www.hyperic.com/}hyperic}}. 
+  
+* Logging
+
+  To split the output of serveral loggers into different file so they can be analyzed easier you can configure Log4J with different appenders per logger. 
+  Please check the Log4J documentation on how to set that up. The SupportTools also have a section on how to configure Log4J for ContentServer.  
   
 Deployment
 
-  All of these tools are deployed through the web application. This means that changes need to be made to the web.xml file. Per tool I have added the instructions. On most cases you can just copy/past them into the 
-  correct location in the web.xml file and then restart the application server. Please make sure that the declarations are placed at the right location in the web.xml, otherwise the web application might not function anymore.
-  
+  All of these tools are deployed through the web application. This means that changes need to be made to the web.xml file. 
+  Per tool I have added the instructions. 
+  On most cases you can just copy/past them into the correct location in the web.xml file and then restart the application server. 
+    
   All of the tools are packaged in a single jar file that can be downloaded {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/webapp-profiling/ }here}}      
   
   
@@ -43,12 +63,12 @@ Status servlet filter
     <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
 ---------
-  
+ 
   
   
 Response time profilters
   
-  Five different variants to profile for response times. Each with their benefit
+  Five different variants to profile for response times. Each with their benefit:
   
     * TimerFilter: simplest
     
@@ -77,9 +97,12 @@ Response time profilters
   </filter-mapping>
 ---------
   
+  Output is like this:
   
+------
+[2010-06-02 14:04:23.144][com.fatwire.gst.web.servlet.profiling.servlet.filter.TimerFilter][DEBUG] 5 ms for GET|/cs/ContentServer?pagename=OpenMarket%2FXcelerate%2FSearch%2FEvent
+------  
   
-
 
 
 * LoggerFilter
@@ -100,6 +123,11 @@ Response time profilters
   </filter-mapping>
 ---------
   
+  Output:
+
+--------
+[2010-06-02 14:04:23.144][com.fatwire.gst.web.servlet.profiling.servlet.filter.LoggerFilter][INFO] B1076A3824CE4FA84DCA5FAA9C90035E|GET|/cs/ContentServer?pagename=OpenMarket%2FXcelerate%2FSearch%2FEvent in 5 ms
+---------
   
   
 * ResponseTimeFilter
@@ -115,7 +143,7 @@ Response time profilters
   
   * name is a dot seperated string with request.method.uri.pagename.jsp
   
-  * elapsed is the execution time for this request
+  * elapsed is the execution time for this request in micro seconds.
   
   * level is the nesting level of this request
   
@@ -140,16 +168,67 @@ Response time profilters
 
   The filter takes a parameter called "specialParams". This is a semi-column seperated list of names that are used for addition to the name. Default values are "pagename" and "blobtable".
   
+  Sample output
+  
+---------
+period	name	elapsed	nesting	counter
+208	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Search/Event./cs/jsp/cs_deployed/OpenMarket/Xcelerate/Search/Event.jsp	2801	2	9
+208	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Search/Event	12581	1	9
+
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser./cs/jsp/cs_deployed/OpenMarket/Xcelerate/Util/getCurrentUser.jsp	27867	2	36
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser./cs/jsp/cs_deployed/OpenMarket/Xcelerate/Util/getCurrentUser.jsp	33973	2	35
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser./cs/jsp/cs_deployed/OpenMarket/Xcelerate/Util/getCurrentUser.jsp	30566	2	37
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser	95184	1	35
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser	64995	1	36
+703	request.GET./cs/ContentServer.pagename=OpenMarket/Xcelerate/Util/getCurrentUser	58655	1	37
+--------  
+  
+  Any line with value '1' in the nesting column is the outer request, if the nesting value is higher the request is included.
+  
+  The requests can be grouped by their 'counter' value. This is usefull to correlate concurrent requests, as seen by the getCurrentUser requests. 
    
 * ResponseTimeRequestListener
   
   Adds averages for requests to JMX MBeans in the namespace <<<com.fatwire.gst.web.servlet:type=ResponseTimeStatistic>>>.
+  
+  The root bean (com.fatwire.gst.web.servlet:type=ResponseTimeStatistic) holds the statistics for all the requests. The 'child' beans do this at their most detail, there is no aggregation at the 'parent' level. For instance for 'com.fatwire.gst.web.servlet:type=ResponseTimeStatistic,path=/cs/ContentServer,pagename=OpenMarket/Xcelerate/Search/Event'
+  the data is not aggregated at 'com.fatwire.gst.web.servlet:type=ResponseTimeStatistic,path=/cs/ContentServer'. That bean counts response times when no <pagename> parameter can be found on the request.  
   
 ---------
   <listener>
   	<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeRequestListener</listener-class>
   </listener>
 --------
+  
+  Some screenshots:
+
+  Overview of the total, this includes all the requests.
+  
+[images/jmx-response-time-total.png] Total
+  
+  Details of a servlet, in this case the CacheServer servlet.
+
+[images/jmx-response-time-detail.png] Detail
+
+  Details of the FSIIWrapper page
+
+[images/jmx-response-time-fsiiwrapper.png] FSIIWrappper
+
+  Details of the Advanced UI login page. 
+  Details on page (pagenames) are only gathered at their detail level if the pagename parameter can be retrieved via request.getParameter(); 
+  if it is a GET or a POST in a urlencoded form.
+
+[images/jmx-response-time-login-page.png]
+
+  Details of a BlobServer
+
+[images/jmx-response-time-blobs.png]
+
+  Details of a Dash jsp.
+
+[images/jmx-response-time-dash.png]
+
+
   
   
 * Time debug parser to JMX 
@@ -162,6 +241,26 @@ Response time profilters
   	<listener-class>com.fatwire.gst.web.servlet.profiling.logger.TimeDebugListener</listener-class>
   </listener>
 ---------
+
+  Some screenshots:
+  
+  Overview
+
+[images/time-debug-overview.png] Overview for time debug
+
+  Details for an element
+
+[images/time-debug-element.png] details for an element
+ 
+ Details for a page
+
+[images/time-debug-page.png] 
+
+  Details for sql select statements.
+  
+[images/time-debug-sql.png] 
+  
+
 
 ~~experimental, not tested as a version that also works for out of the box logger. This is at this moment not complete, as the common-logging factory class needs to be written.
 ~~com.fatwire.gst.web.servlet.profiling.logger.ft.TraditionalInterceptor
@@ -177,6 +276,19 @@ CacheManager JMX tool
   </listener>
 ----------  
   
+  and some screenshots:
+  
+  Overview
+  
+[images/jmx-overview.png]
+
+  Detail of a ContentServer cache  
+
+[images/jmx-caches.png]
+
+  Detail of a ContentServer cache
+
+[images/jmx-cache-detail.png]
   
   
 Debug
@@ -199,6 +311,20 @@ Debug
   </listener>
 --------  
   
+  The output is:
+  
+---------
+[2010-06-02 14:04:23.139][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionCreated: 'B1076A3824CE4FA84DCA5FAA9C90035E', lastAccessed: Wed Jun 02 14:04:23 CEST 2010, created:Wed Jun 02 14:04:23 CEST 2010, maxInactiveInterval: 1800
+[2010-06-02 14:04:23.139][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeAdded: 'B1076A3824CE4FA84DCA5FAA9C90035E' distributionListener=MyHttpSessionActivationListener
+[2010-06-02 14:04:23.141][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeAdded: 'B1076A3824CE4FA84DCA5FAA9C90035E' username=DefaultReader
+[2010-06-02 14:04:23.141][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeAdded: 'B1076A3824CE4FA84DCA5FAA9C90035E' currentUser=2
+[2010-06-02 14:04:23.141][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeAdded: 'B1076A3824CE4FA84DCA5FAA9C90035E' currentACL=Browser,Visitor
+[2010-06-02 14:04:23.143][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionDestroyed: 'B1076A3824CE4FA84DCA5FAA9C90035E', lastAccessed: Wed Jun 02 14:04:23 CEST 2010, created:Wed Jun 02 14:04:23 CEST 2010, maxInactiveInterval: 900
+[2010-06-02 14:04:23.143][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeRemoved: 'B1076A3824CE4FA84DCA5FAA9C90035E' username
+[2010-06-02 14:04:23.143][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeRemoved: 'B1076A3824CE4FA84DCA5FAA9C90035E' currentACL
+[2010-06-02 14:04:23.143][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeRemoved: 'B1076A3824CE4FA84DCA5FAA9C90035E' currentUser
+[2010-06-02 14:04:23.143][com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger][DEBUG] sessionAttributeRemoved: 'B1076A3824CE4FA84DCA5FAA9C90035E' distributionListener
+----------  
   
   
 Cache-Control response header tools
@@ -216,7 +342,7 @@ Cache-Control response header tools
 
 * ExpiresFilter
 
-  Servlet Filter so set Cache-Control: max-age header
+  Servlet Filter so set Cache-Control: max-age header. The extension based pattern in the example below add quickly browsing caching capabilities to static jpeg images.  
 
 -------------
   <filter>
@@ -296,12 +422,18 @@ Various
   </listener>
 -------  
   
+  Here is a screenshot of the JMX information in jconsole:
+
+[images/jmx-version.png]
+  
 Debug
   
   
 * AccessLogFilter
   
   Prints detailed information to the log file on the http request as provided by the servlet container. Logger name is <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.AccessLogFilter>>>. 
+
+  The columns printed are: <<<method	scheme	servername	serverport	requesturi	protocol	contextpath	servletpath	pathinfo	querystring	characterencoding	contentlength	contenttype	cookies	locale	remoteaddr	remotehost	remoteuser	requestedsessionid	sessionid	userprincipal>>>
 
 -------
   <filter>
@@ -316,8 +448,13 @@ Debug
   </filter-mapping>
 ---------
   
+  Ouput:
+
+-------------
+[2010-06-02 14:04:23.139][com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.AccessLogFilter][INFO] GET	http	localhost	8180	/cs/ContentServer	HTTP/1.1	/cs	/ContentServer	null	pagename=OpenMarket%2FXcelerate%2FSearch%2FEvent	null	-1	null		en_US	127.0.0.1	127.0.0.1	null	null	B1076A3824CE4FA84DCA5FAA9C90035E		
+------------  
   
- * ContentServerDuplicateHeaderFilter
+* ContentServerDuplicateHeaderFilter
   
   Filters out some http response headers, when set by the servlet.
   
@@ -344,7 +481,7 @@ Debug
   
   
   
- * HeaderStackTraceFilter
+* HeaderStackTraceFilter
   
   prints a stack trace to the log file each time the servlet sets a response header or a cookie.
 
@@ -362,7 +499,7 @@ Debug
 ---------
   
   
- * RequestDumperFilter
+* RequestDumperFilter
   
   Shameless copy from apache-tomcat. Prints a lot of information on the received request. The logger name is <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.RequestDumperFilter>>> and it logs at TRACE level.
   
@@ -379,7 +516,38 @@ Debug
   </filter-mapping>
 ---------
   
+  The output of this tool is:
   
+----------
+[2010-06-02 14:04:23.140][com.fatwire.gst.web.servlet.profiling.servlet.filter.debug.RequestDumperFilter][TRACE] Request Received at 2010-06-02 14:04:23.139
+ characterEncoding=null
+     contentLength=-1
+       contentType=null
+            locale=en_US
+           locales=en_US
+         parameter=pagename=OpenMarket/Xcelerate/Search/Event
+          protocol=HTTP/1.1
+        remoteAddr=127.0.0.1
+        remoteHost=127.0.0.1
+            scheme=http
+        serverName=localhost
+        serverPort=8180
+          isSecure=false
+ ---------------------------------------------
+       contextPath=/cs
+            header=user-agent=Java/1.6.0_20
+            header=host=localhost:8180
+            header=accept=text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
+            header=connection=keep-alive
+            method=GET
+          pathInfo=null
+       queryString=pagename=OpenMarket%2FXcelerate%2FSearch%2FEvent
+        remoteUser=null
+requestedSessionId=null
+        requestURI=/cs/ContentServer
+       servletPath=/ContentServer
+=============================================
+---------  
   
 ~~Highly Experimental:
   
@@ -387,3 +555,11 @@ Debug
   
 ~~  This is an attempt to makde the remote satellite server stateless.
   
+
+
+  
+
+
+
+
+
