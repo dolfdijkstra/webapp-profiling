@@ -1,5 +1,11 @@
 package com.fatwire.gst.web.servlet.profiling;
 
+/**
+ * Interface to take a measurement.
+ * 
+ * @author Dolf.Dijkstra
+ * 
+ */
 public interface Measurement {
 
     /**
@@ -22,7 +28,7 @@ public interface Measurement {
     void stop();
 
     /**
-     * elapsed time in nanoseconds since start or elepsed time between creation and stop()
+     * elapsed time in nanoseconds since creation or elepsed time between creation and stop()
      */
 
     long elapsed();
