@@ -32,24 +32,27 @@ Deployment
   Per tool I have added the instructions. 
   On most cases you can just copy/past them into the correct location in the web.xml file and then restart the application server. 
     
-  All of the tools are packaged in a single jar file that can be downloaded {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/webapp-profiling/ }here}}      
+  All of the tools are packaged in a single jar file that can be downloaded {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/gst-webapp-profiling/ }here}}      
   
   
 Status servlet filter
   
-  ContentServer has no api to set http response status. Many customers believe that this is a severe limitation and this filter works around this limitation. It allows (outer) <<xml elements>> to set the http response status. 
+  ContentServer has no api to set http response status. Many customers believe that this is a severe limitation and 
+  this filter works around this limitation. 
+  It allows (outer) <<xml elements>> to set the http response status. 
   Technically you can set the special header from any called xml element, as long as no jsp element has been called yet.  
   
 
-  The header that needs to be set by the xml element is "X-Fatwire-Status". The most usefull usecases are for status <<<404>>> and <<<302>>>. For the <<<302>>> status also the 'Location' header needs to be specified.
-  Sample code would be \<ICS.STREAMHEADER NAME="X-Fatwire-Status" VALUE="404"/\>. In this case Satellite server will set the http response code to 404.  
+  The header that needs to be set by the xml element is "X-Fatwire-Status". The most useful use cases are for status <<<404>>> and <<<302>>>. 
+  For the <<<302>>> status also the 'Location' header needs to be specified.
+  Sample code would be \<ICS.STREAMHEADER NAME="X-Fatwire-Status" VALUE="404"/\>. 
+  In this case Satellite server will set the http response code to 404.  
 
   Another header that is handled by this filter is "X-Fatwire-Header". The use case for this header is limited, as normal http headers can be set with ics.StreamHeader() or \<ICS.STREAMHEADER NAME="Header Name" VALUE="Header Value"/\>. Sample code for this header: \<ICS.STREAMHEADER NAME="X-Fatwire-Header" VALUE="foo|bar"/\>. 
   At Satellite server the header foo with value bar will be set. 
   
   <<Warning>>: the implementation uses response.setStatus() and not response.sendError(). This might have implications for the invoking of error handlers defined in the web.xml. 
 
-  ~~com.fatwire.gst.web.servlet.httpstatus.CustomHeaderFilter
   
 -------
   <filter>
