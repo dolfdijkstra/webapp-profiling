@@ -27,12 +27,15 @@ public class InfoServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 2427009594776592072L;
 
-    /* (non-Javadoc)
-     * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest
+     * , javax.servlet.http.HttpServletResponse)
      */
     @Override
-    protected void doGet(final HttpServletRequest request,
-            final HttpServletResponse response) throws ServletException,
+    protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException,
             IOException {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/html");
@@ -75,8 +78,7 @@ public class InfoServlet extends HttpServlet {
             this.out = out;
         }
 
-        void doView(final HttpServletRequest request,
-                final HttpServletResponse response) throws Exception {
+        void doView(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
             printTableOpen();
             printVMInfo();
             printRequestDetails(request, response);
@@ -103,13 +105,11 @@ public class InfoServlet extends HttpServlet {
             out.print("</table>");
         }
 
-        private void printTableSectionTitle(final String title)
-                throws Exception {
+        private void printTableSectionTitle(final String title) throws Exception {
             printTableSectionTitle(title, 2);
         }
 
-        private void printTableSectionTitle(final String title, final int span)
-                throws Exception {
+        private void printTableSectionTitle(final String title, final int span) throws Exception {
             out.print("<tr>");
             out.print("<th colspan=\"" + span + "\">");
             out.print(title);
@@ -128,8 +128,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printInitParameters(final ServletContext context)
-                throws Exception {
+        private void printInitParameters(final ServletContext context) throws Exception {
             printTableSectionTitle("Context init parameters");
             final Enumeration<String> enum1 = context.getInitParameterNames();
             while (enum1.hasMoreElements()) {
@@ -140,8 +139,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printAttributes(final ServletRequest request,
-                final ServletContext context) throws Exception {
+        private void printAttributes(final ServletRequest request, final ServletContext context) throws Exception {
             printTableSectionTitle("Context attributes");
             final Enumeration<String> enum2 = context.getAttributeNames();
             try {
@@ -151,7 +149,7 @@ public class InfoServlet extends HttpServlet {
                     printTableRow(key, value.toString());
                 }
             } catch (final Exception e) {
-                //do something...
+                // do something...
             }
 
             printTableSectionTitle("Request attributes");
@@ -170,20 +168,19 @@ public class InfoServlet extends HttpServlet {
             printTableSectionTitle("<a name=\"SystemP\"></a>System Properties");
             final Properties pSystem = System.getProperties();
 
-            //            final Set en_pNames = new TreeMap<Object,Object>(pSystem).entrySet();
-            //            for (final Iterator<Map.Entry<String,String>> itor = en_pNames.iterator(); itor.hasNext();) {
-            for (final Entry<Object, Object> e : new TreeMap<Object, Object>(
-                    pSystem).entrySet()) {
+            // final Set en_pNames = new
+            // TreeMap<Object,Object>(pSystem).entrySet();
+            // for (final Iterator<Map.Entry<String,String>> itor =
+            // en_pNames.iterator(); itor.hasNext();) {
+            for (final Entry<Object, Object> e : new TreeMap<Object, Object>(pSystem).entrySet()) {
                 final String sPropertyName = (String) e.getKey();
                 final String sPropertyValue = (String) e.getValue();
                 printTableRow(sPropertyName, sPropertyValue);
             }
         }
 
-        private void printRequestDetails(
-                final javax.servlet.http.HttpServletRequest request,
-                final javax.servlet.http.HttpServletResponse response)
-                throws Exception {
+        private void printRequestDetails(final javax.servlet.http.HttpServletRequest request,
+                final javax.servlet.http.HttpServletResponse response) throws Exception {
             final ServletConfig config = InfoServlet.this.getServletConfig();
             printTableSectionTitle("Servlet Information");
             printTableRow("Protocol", request.getProtocol().trim());
@@ -201,26 +198,22 @@ public class InfoServlet extends HttpServlet {
             printTableRow("Query String", request.getQueryString());
             printTableRow("Servlet Name", config.getServletName());
 
-            printTableRow("WebServer Info", config.getServletContext()
-                    .getServerInfo());
+            printTableRow("WebServer Info", config.getServletContext().getServerInfo());
             printTableRow("WebServer Remote Addr", request.getRemoteAddr());
             printTableRow("WebServer Remote Host", request.getRemoteHost());
             printTableRow("Character Encoding", request.getCharacterEncoding());
             printTableRow("Content Length", "" + request.getContentLength());
             printTableRow("Content Type", request.getContentType());
             printTableRow("WebServer Locale", request.getLocale().toString());
-            printTableRow("Default Response Buffer", ""
-                    + response.getBufferSize());
+            printTableRow("Default Response Buffer", "" + response.getBufferSize());
             printTableRow("Request Is Secure", "" + request.isSecure());
             printTableRow("Auth Type", request.getAuthType());
         }
 
-        private void printRequestParameters(
-                final javax.servlet.http.HttpServletRequest request)
-                throws Exception {
+        private void printRequestParameters(final javax.servlet.http.HttpServletRequest request) throws Exception {
             printTableSectionTitle("Parameter names in this request");
             final StringBuilder sbOut = new StringBuilder();
-            final Enumeration e2 = request.getParameterNames();
+            final Enumeration<?> e2 = request.getParameterNames();
             while (e2.hasMoreElements()) {
                 final String key = (String) e2.nextElement();
                 final String[] values = request.getParameterValues(key);
@@ -234,9 +227,7 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printRequestCookies(
-                final javax.servlet.http.HttpServletRequest request)
-                throws Exception {
+        private void printRequestCookies(final javax.servlet.http.HttpServletRequest request) throws Exception {
             printTableSectionTitle("Cookies in this request");
             final Cookie[] cookies = request.getCookies();
             if (null != cookies) {
@@ -248,22 +239,16 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printSessionInfo(
-                final javax.servlet.http.HttpServletRequest request,
+        private void printSessionInfo(final javax.servlet.http.HttpServletRequest request,
                 final javax.servlet.http.HttpSession session) throws Exception {
-            final SimpleDateFormat sdf = new SimpleDateFormat(
-                    "yyyy-MM-dd HH:mm:ss.sss zzz");
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.sss zzz");
             printTableSectionTitle("Session information in this request");
-            printTableRow("Requested Session Id", ""
-                    + request.getRequestedSessionId());
+            printTableRow("Requested Session Id", "" + request.getRequestedSessionId());
             printTableRow("Current Session Id", "" + session.getId());
-            printTableRow("Session Created Time", ""
-                    + sdf.format(new java.util.Date(session.getCreationTime())));
+            printTableRow("Session Created Time", "" + sdf.format(new java.util.Date(session.getCreationTime())));
             printTableRow("Session Last Accessed Time", ""
-                    + sdf.format(new java.util.Date(session
-                            .getLastAccessedTime())));
-            printTableRow("Session Max Inactive Interval Seconds", ""
-                    + session.getMaxInactiveInterval());
+                    + sdf.format(new java.util.Date(session.getLastAccessedTime())));
+            printTableRow("Session Max Inactive Interval Seconds", "" + session.getMaxInactiveInterval());
 
             printTableSectionTitle("Session scoped attributes");
             final Enumeration<String> names = session.getAttributeNames();
@@ -274,14 +259,12 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printRequestHeaders(
-                final javax.servlet.http.HttpServletRequest request)
-                throws Exception {
+        private void printRequestHeaders(final javax.servlet.http.HttpServletRequest request) throws Exception {
             printTableSectionTitle("<a name=\"RequestH\"></a>Request headers");
             final Enumeration<String> e1 = request.getHeaderNames();
             while (e1.hasMoreElements()) {
                 final String key = e1.nextElement();
-                //final Enumeration e2 = request.getHeaders(key);
+                // final Enumeration e2 = request.getHeaders(key);
                 final String value = request.getHeader(key);
                 printTableRow(key, value);
             }
@@ -290,38 +273,28 @@ public class InfoServlet extends HttpServlet {
         private void printVMInfo() throws Exception {
             printTableSectionTitle("Java VM Information");
             final Runtime rt = Runtime.getRuntime();
-            //printTableRow("Max Memory", "" + rt.maxMemory() + " bytes"); 
+            // printTableRow("Max Memory", "" + rt.maxMemory() + " bytes");
             printTableRow("Total Memory", "" + rt.totalMemory() + " bytes");
             printTableRow("Free Memory", "" + rt.freeMemory() + " bytes");
-        }
-
-        private void printCurrentDate() throws Exception {
-            final SimpleDateFormat sdf = new SimpleDateFormat(
-                    "yyyy-MM-dd HH:mm:ss.sss zzz");
-            printTableSectionTitle("Current Date");
-            printTableRow("Date", sdf.format(new java.util.Date()));
         }
 
         private void printAddresses() throws Exception {
             printTableSectionTitle("AppServer DNS Names and IP Addresses", 3);
 
             final InetAddress local = InetAddress.getLocalHost();
-            final InetAddress[] localList = InetAddress.getAllByName(local
-                    .getHostName());
+            final InetAddress[] localList = InetAddress.getAllByName(local.getHostName());
 
             for (int i = 0; i < localList.length; i++) {
                 final String sHostName = localList[i].getHostName();
                 final String sHostIP = localList[i].getHostAddress();
-                printTableRow(sHostName, sHostIP, localList[i]
-                        .getCanonicalHostName());
+                printTableRow(sHostName, sHostIP, localList[i].getCanonicalHostName());
             }
         }
 
         private void printClassFolder() throws Exception {
             printTableSectionTitle("ContentServer deployment folder");
             final Class<SContentServer> csClass = COM.FutureTense.Servlet.SContentServer.class;
-            printTableRow("SContentServer loaded from", csClass.getResource(
-                    "SContentServer.class").toString());
+            printTableRow("SContentServer loaded from", csClass.getResource("SContentServer.class").toString());
         }
 
         private void printCurrentThreadGroup() throws Exception {
