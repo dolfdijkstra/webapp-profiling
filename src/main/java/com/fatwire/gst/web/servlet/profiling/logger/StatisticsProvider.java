@@ -11,13 +11,16 @@ import javax.management.ObjectName;
 
 import org.apache.log4j.helpers.LogLog;
 
-public class StatisticsProvider implements TimeDebugParser.ParserCallback,
-        StatisticsProviderMBean {
+public class StatisticsProvider implements TimeDebugParser.ParserCallback, StatisticsProviderMBean {
 
     public static String NAME = "com.fatwire.gst.web.servlet:type=StatisticsProvider";
 
-    private ConcurrentHashMap<String, Stat> stats = new ConcurrentHashMap<String, Stat>(
-            200, 0.75f, 2); //append is called from asynchronized method
+    private ConcurrentHashMap<String, Stat> stats = new ConcurrentHashMap<String, Stat>(200, 0.75f, 2); // append
+                                                                                                        // is
+                                                                                                        // called
+                                                                                                        // from
+                                                                                                        // asynchronized
+                                                                                                        // method
 
     private MBeanServer server;
 
@@ -36,7 +39,7 @@ public class StatisticsProvider implements TimeDebugParser.ParserCallback,
     }
 
     public void close() {
-        stats.clear();
+
         for (Stat s : getStats()) {
             if (s.getName() != null) {
                 try {
@@ -46,12 +49,14 @@ public class StatisticsProvider implements TimeDebugParser.ParserCallback,
                 }
             }
         }
+        stats.clear();
         server = null;
     }
 
     public void update(String type, String subType, long time) {
         if (time > 3722801423L)
-            return; // do not log large values do to bug in CS when turning on time debug.
+            return; // do not log large values do to bug in CS when turning on
+                    // time debug.
         Stat s = getStat(type, subType);
         s.update(time);
 
@@ -63,10 +68,8 @@ public class StatisticsProvider implements TimeDebugParser.ParserCallback,
         if (s == null) {
             ObjectName name = null;
             try {
-                name = new ObjectName(
-                        "com.fatwire.gst.web.servlet:type=StatFromTimeDebug,group="
-                                + type
-                                + (subType != null ? ",subType=" + subType : ""));
+                name = new ObjectName("com.fatwire.gst.web.servlet:type=StatFromTimeDebug,group=" + type
+                        + (subType != null ? ",subType=" + subType : ""));
             } catch (MalformedObjectNameException e) {
                 LogLog.warn(e.getMessage(), e);
             } catch (NullPointerException e) {
@@ -105,6 +108,12 @@ public class StatisticsProvider implements TimeDebugParser.ParserCallback,
      */
     public void setServer(MBeanServer server) {
         this.server = server;
+    }
+
+    public void reset() {
+        for (Stat s : getStats()) {
+            s.reset();
+        }
     }
 
 }
