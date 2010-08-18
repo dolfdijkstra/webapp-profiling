@@ -166,17 +166,5 @@
 			<id>website</id>
 			<url>scp://d670-1.nl.fatwire.com/var/www/html/dta/contrib/webapp-profiling</url>
 		</site>
-		<!-- use the following if you're not using a snapshot version. -->
-		<repository>
-			<id>fatwire-repository</id>
-			<name>FatWire Repository</name>
-			<url>scp://d670-1.nl.fatwire.com/var/www/html/maven2</url>
-		</repository>
-		<!-- use the following if you ARE using a snapshot version. -->
-		<snapshotRepository>
-			<id>fatwire-repository</id>
-			<name>FatWire Repository</name>
-			<url>scp://d670-1.nl.fatwire.com/var/www/html/snapshot-repo</url>
-		</snapshotRepository>
 	</distributionManagement>
 </project>
