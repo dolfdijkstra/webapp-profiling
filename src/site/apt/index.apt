@@ -37,7 +37,7 @@ Introduction
   
   Another big advantage that several monitoring applications have JMX support, like {{{http://www.cacti.net/}cacti}} or {{{http://www.hyperic.com/}hyperic}}. 
   
-* Logging
+* Logging Tip
 
   To split the output of serveral loggers into different file so they can be analyzed easier you can configure Log4J with different appenders per logger. 
   Please check the Log4J documentation on how to set that up. The SupportTools also have a section on how to configure Log4J for ContentServer.  
@@ -48,7 +48,7 @@ Deployment
   Per tool I have added the instructions. 
   On most cases you can just copy/past them into the correct location in the web.xml file and then restart the application server. 
     
-  All of the tools are packaged in a single jar file that can be downloaded {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/gst-webapp-profiling/ }here}}      
+  All of the tools can be downloaded as {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/gst-webapp-profiling/ }packaged in a single jar file}}.
   
   
 Status servlet filter
@@ -106,12 +106,12 @@ Response time profilters
 
 -------
   <filter>
-    <filter-name>TimerFilter'</filter-name>
+    <filter-name>TimerFilter</filter-name>
     <filter-class>com.fatwire.gst.web.servlet.profiling.servlet.filter.TimerFilter</filter-class>
   </filter>
   
   <filter-mapping>
-    <filter-name>TimerFilter'</filter-name>
+    <filter-name>TimerFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 ---------
@@ -574,11 +574,4 @@ requestedSessionId=null
   
 ~~  This is an attempt to makde the remote satellite server stateless.
   
-
-
-  
-
-
-
-
 
