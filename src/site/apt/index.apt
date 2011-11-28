@@ -93,6 +93,8 @@ Response time profilters
     
     * LoggerFilter: add sessionid to TimerFilter
     
+    * RequestIdLogger: adds a unique id to each log line for the request, to relate log lines from the same request. 
+    
     * ResponseTimeFilter: adds nesting for further granularity. More usefull at ContentServer than at Satellite servlet.
     
     * ResponseTimeRequestListener: provides statistical information, accessable via JMX
@@ -148,6 +150,140 @@ Response time profilters
 [2010-06-02 14:04:23.144][com.fatwire.gst.web.servlet.profiling.servlet.filter.LoggerFilter][INFO] B1076A3824CE4FA84DCA5FAA9C90035E|GET|/cs/ContentServer?pagename=OpenMarket%2FXcelerate%2FSearch%2FEvent in 5 ms
 ---------
   
+* RequestIdLogger
+
+  The intent of the RequestIdLogger is to have the ability to group log messages for the same request together. 
+  This is accomplished by adding a Log4J MDC variable with the name 'request-id' at the start of each request.
+  By adding this MDC variable to the Log4j appender layout log messages can be related by request-id.
+
+  To implement this functionality, add the following lines to web.xml:
+  
+--------
+
+        <listener>
+                <listener-class>com.fatwire.gst.web.servlet.profiling.servlet.RequestIdLogger</listener-class>
+        </listener>
+
+-------- 
+
+    Also add %X\{request-id\} to the Log4J appender.
+    
+--------
+  log4j.appender.FWDefaultAppender.layout.ConversionPattern=[%d{ISO8601}] [%-5p] - %20.20t - %X{request-id} - %c{4} - %m%n
+  
+  # Add a seperate appender to log all time messages to a special file (time.log)
+  
+  log4j.appender.TimeAppender=org.apache.log4j.RollingFileAppender
+  log4j.appender.TimeAppender.Append=true
+  log4j.appender.TimeAppender.bufferedIO=false
+  log4j.appender.TimeAppender.BufferSize=256
+  log4j.appender.TimeAppender.encoding=UTF-8
+  log4j.appender.TimeAppender.File=/data/CS/jsk761/ContentServer/7.6.0/time.log
+  log4j.appender.TimeAppender.layout.ConversionPattern=%d{ISO8601} %r %X{request-id} %m%n
+  log4j.appender.TimeAppender.layout=org.apache.log4j.PatternLayout
+  log4j.appender.TimeAppender.MaxBackupIndex=15
+  log4j.appender.TimeAppender.MaxFileSize=10MB
+  log4j.appender.TimeAppender=org.apache.log4j.RollingFileAppender
+  
+  # Set log level to DEBUG and add the TimeAppender
+  log4j.logger.com.fatwire.logging.cs.time=DEBUG,TimeAppender
+
+--------      
+
+  The output in the futuretense.txt based on the above appender layout is for example as below. 1322128665613 is the request id. Different requests will have different ids/
+
+--------
+[2011-11-24 13:36:17,332] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Start request 1322128665613 http://localhost:8180/cs/ContentServer?pagename=OpenMarket/Xcelerate/Search/Event
+[2011-11-24 13:36:17,335] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Executed query SELECT pagename,rootelement,csstatus,pageletonly,resargs1,resargs2,pagecriteria,cscacheinfo,sscacheinfo,acl FROM SiteCatalog WHERE pagename = ? in 1ms.
+[2011-11-24 13:36:17,337] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Executed query SELECT elementname,description,url,resdetails1,resdetails2 FROM ElementCatalog WHERE elementname = ? in 1ms.
+[2011-11-24 13:36:17,340] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Executed element OpenMarket/Xcelerate/Search/Event in 3ms.
+[2011-11-24 13:36:17,340] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Execute page OpenMarket/Xcelerate/Search/Event Hours: 0 Minutes: 0 Seconds: 0:006
+[2011-11-24 13:36:17,340] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Processed 1 JSP elements in  Hours: 0 Minutes: 0 Seconds: 0:003
+[2011-11-24 13:36:17,340] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Executed request 1322128665613 'http://localhost:8180/cs/ContentServer?pagename=OpenMarket/Xcelerate/Search/Event' in 8 ms 
+--------
+
+  The futurense.txt is also logging the request-id from threads started by the requets, as can be seen for the SearchEvent.
+  
+--------
+
+[2011-11-24 13:36:17,345] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement select * from AssetQueues in 1ms
+[2011-11-24 13:36:17,347] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM Global_Q ORDER BY id in 1ms
+[2011-11-24 13:36:17,348] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM Media_C_Q ORDER BY id in 1ms
+[2011-11-24 13:36:17,349] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM Content_C_Q ORDER BY id in 1ms
+[2011-11-24 13:36:17,349] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM Document_C_Q ORDER BY id in 0ms
+[2011-11-24 13:36:17,350] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM GSTAlias_Q ORDER BY id in 1ms
+[2011-11-24 13:36:17,350] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM GSTVirtualWebroot_Q ORDER BY id in 0ms
+[2011-11-24 13:36:17,350] [DEBUG] [          Thread-340] [1322128665613][fatwire.logging.cs.time] Executed prepared statement SELECT assettype,assetid,action FROM Product_C_Q ORDER BY id in 0ms
+
+--------
+  
+  In time.log the fields are slighly different from futuretense.txt. The fields are: timestamp, milliseconds passed since (appender) start, request id, message.
+
+--------
+
+2011-11-28 11:52:12,619 482598 1322477050008 Start request 1322477050008 http://localhost:8180/cs/ContentServer?pagename=OpenMarket/Xcelerate/Search/Event
+2011-11-28 11:52:12,638 482617 1322477050008 Executed element OpenMarket/Xcelerate/Search/Event in 14ms.
+2011-11-28 11:52:12,639 482618 1322477050008 Execute page OpenMarket/Xcelerate/Search/Event Hours: 0 Minutes: 0 Seconds: 0:017
+2011-11-28 11:52:12,639 482618 1322477050008 Processed 1 JSP elements in  Hours: 0 Minutes: 0 Seconds: 0:014
+2011-11-28 11:52:12,640 482619 1322477050008 Executed request 1322477050008 'http://localhost:8180/cs/ContentServer?pagename=OpenMarket/Xcelerate/Search/Event' in 20 ms
+
+
+2011-11-28 11:52:12,643 482622 1322477050008 Executed prepared statement select * from AssetQueues in 0ms
+2011-11-28 11:52:12,645 482624 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM Global_Q ORDER BY id in 1ms
+2011-11-28 11:52:12,646 482625 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM Media_C_Q ORDER BY id in 1ms
+2011-11-28 11:52:12,648 482627 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM Content_C_Q ORDER BY id in 0ms
+2011-11-28 11:52:12,648 482627 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM Document_C_Q ORDER BY id in 0ms
+2011-11-28 11:52:12,648 482627 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM GSTAlias_Q ORDER BY id in 0ms
+2011-11-28 11:52:12,649 482628 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM GSTVirtualWebroot_Q ORDER BY id in 1ms
+2011-11-28 11:52:12,649 482628 1322477050008 Executed prepared statement SELECT assettype,assetid,action FROM Product_C_Q ORDER BY id in 0ms
+--------
+
+  The format of the time.log file helps for parsing for further analysis in R or MS Excel. For instance the script below splits the time.log
+  file into several files, once per request, and builds 3 other files, for the elements (-e.txt), the pages (-p.txt) and the combined elements
+  and pages (-c.txt). 
+
+-------  
+
+#!/bin/bash
+
+#split the time.log file in several files, each per request id.
+
+dir=request
+rm -f $dir/*
+cat time.log | awk '{close(f);f=$4}{print > "'"$dir"'/"f}'
+for f in $dir/*
+do
+  FILESIZE=$(stat -c%s "$f")
+  if [ $FILESIZE -gt 2048 ]
+  then
+    echo "$f is $FILESIZE"
+    awk '/Executed element/ {print $7,$3,$9}' $f | sed -e 's/ms.//' | awk '{print "element", $1,$2-$3,$2,$3}' | sort -k3 -n > $f-e.txt
+    grep 'Execute page' $f | cut -b 25- | awk 'BEGIN {FS="[ :]"};{e=$8*3600000+$11*60000+$14*1000+$15; print "page",$5,$1-e,$1,e }' | sort -k3 -n > $f-p.txt
+    cat $f-p.txt $f-e.txt | sort -k3n -k1r > $f-c.txt
+  else
+   #remove small files
+   rm $f
+  fi
+done
+
+-------  
+
+  The output for the combined file is for example:
+
+-------
+
+page OpenMarket/Xcelerate/Actions/ProcessQueue 62630 62805 175
+element OpenMarket/Xcelerate/Actions/ProcessQueue 62647 62805 158
+element OpenMarket/Xcelerate/UIFramework/BasicEnvironment 62703 62708 5
+element OpenMarket/Xcelerate/UIFramework/StandardHeader 62709 62713 4
+element OpenMarket/Xcelerate/UIFramework/BasicHeader 62712 62713 1
+
+---------
+  
+  This output can be further use to create waterfall diagrams.  
+
+[images/element-waterfall.png] Waterfall
+
   
 * ResponseTimeFilter
   
