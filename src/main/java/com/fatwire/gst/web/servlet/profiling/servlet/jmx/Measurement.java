@@ -24,10 +24,17 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 /**
- * <p>Class to take a measurement. It is an advanced stopwatch. It records elapsed time, as well as cpu user time, thread block and wait counts that happend during the measurement period.</p>
+ * <p>
+ * Class to take a measurement. It is an advanced stopwatch. It records elapsed
+ * time, as well as cpu user time, thread block and wait counts that happend
+ * during the measurement period.
+ * </p>
  * 
  * 
- * <p>This class is not thread-safe. It should be used (by design) in only one thread.</p>
+ * <p>
+ * This class is not thread-safe. It should be used (by design) in only one
+ * thread.
+ * </p>
  * 
  * @author Dolf.Dijkstra
  * 
@@ -58,7 +65,7 @@ public class Measurement {
 
     private long endWaitCount;
 
-    private boolean meaureCpuTime = false;
+    private boolean measureCpuTime = false;
 
     private boolean measureCount = false;
 
@@ -69,8 +76,9 @@ public class Measurement {
     /**
      * 
      * Manual override of the thread time and block counting
-     * @param time
-     * @param count
+     * 
+     * @param time {@link ThreadMXBean#setThreadCpuTimeEnabled(boolean)}
+     * @param count {@link ThreadMXBean#setThreadContentionMonitoringEnabled(boolean)}
      */
 
     public Measurement(boolean time, boolean count) {
@@ -79,19 +87,21 @@ public class Measurement {
             if (!threadMXBean.isThreadCpuTimeEnabled()) {
                 threadMXBean.setThreadCpuTimeEnabled(true);
             }
-            meaureCpuTime = threadMXBean.isCurrentThreadCpuTimeSupported();
+            measureCpuTime = threadMXBean.isCurrentThreadCpuTimeSupported();
 
         }
         if (count && threadMXBean.isThreadContentionMonitoringSupported()) {
             if (!threadMXBean.isThreadContentionMonitoringEnabled()) {
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
             }
-            this.measureCount = threadMXBean
-                    .isThreadContentionMonitoringEnabled();
+            measureCount = threadMXBean.isThreadContentionMonitoringEnabled();
         }
 
     }
 
+    /**
+     * Default constructor with time=true and count=true)
+     */
     public Measurement() {
         this(true, true);
 
@@ -106,18 +116,16 @@ public class Measurement {
             throw new IllegalStateException("Measurement already started");
 
         state = RunningState.STARTED;
-
-        this.startTime = System.nanoTime();
-        if (meaureCpuTime) {
+        if (measureCpuTime) {
             startUserTime = threadMXBean.getCurrentThreadUserTime();
             startCpuTime = threadMXBean.getCurrentThreadCpuTime();
         }
         if (measureCount) {
-            ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread()
-                    .getId());
+            ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
             startBlockedCount = info.getBlockedCount();
             startWaitCount = info.getWaitedCount();
         }
+        this.startTime = System.nanoTime();
 
     }
 
@@ -130,16 +138,15 @@ public class Measurement {
             throw new IllegalStateException("Measurement not running");
         state = RunningState.STOPPED;
         this.endTime = System.nanoTime();
-        if (meaureCpuTime) {
+        if (measureCpuTime) {
             endUserTime = threadMXBean.getCurrentThreadUserTime();
-
             endCpuTime = threadMXBean.getCurrentThreadCpuTime();
-            if (this.measureCount) {
-                ThreadInfo info = threadMXBean.getThreadInfo(Thread
-                        .currentThread().getId());
-                endBlockedCount = info.getBlockedCount();
-                endWaitCount = info.getWaitedCount();
-            }
+        }
+        if (measureCount) {
+            ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
+            endBlockedCount = info.getBlockedCount();
+            endWaitCount = info.getWaitedCount();
+            
         }
 
     }
@@ -149,27 +156,35 @@ public class Measurement {
      * @return the number of nanoseconds elapsed between start and stop
      */
     public long getElapsedTime() {
+        if (state == RunningState.STARTED)
+            throw new IllegalStateException("Illegal when measurement is taken.");
         return endTime - startTime;
     }
 
     /**
-     *  
-     * @return the number of nanoseconds as reported by CpuTime elapsed between start and stop
+     * 
+     * @return the number of nanoseconds as reported by CpuTime elapsed between
+     *         start and stop
      * @see ThreadMXBean#getCurrentThreadCpuTime()
      */
 
     public long getElapsedCpuTime() {
+        if (state == RunningState.STARTED)
+            throw new IllegalStateException("Illegal when measurement is taken.");
 
         return this.endCpuTime - this.startCpuTime;
     }
 
     /**
-     *  
-     * @return the number of nanoseconds as reported by UserTime elapsed between start and stop
+     * 
+     * @return the number of nanoseconds as reported by UserTime elapsed between
+     *         start and stop
      * @see ThreadMXBean#getCurrentThreadUserTime()
      */
 
     public long getElapsedUserTime() {
+        if (state == RunningState.STARTED)
+            throw new IllegalStateException("Illegal when measurement is taken.");
         return this.endUserTime - this.startUserTime;
     }
 
@@ -179,6 +194,8 @@ public class Measurement {
      * @see ThreadInfo#getBlockedCount()
      */
     public long getBlockCountDelta() {
+        if (state == RunningState.STARTED)
+            throw new IllegalStateException("Illegal when measurement is taken.");
         return this.endBlockedCount - this.startBlockedCount;
     }
 
@@ -189,7 +206,22 @@ public class Measurement {
      */
 
     public long getWaitCountDelta() {
+        if (state == RunningState.STARTED)
+            throw new IllegalStateException("Illegal when measurement is taken.");
         return this.endWaitCount - this.startWaitCount;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "Measurement [measureCpuTime=" + measureCpuTime + ", measureCount=" + measureCount
+                + ", getElapsedTime()=" + getElapsedTime() + ", getElapsedCpuTime()=" + getElapsedCpuTime()
+                + ", getElapsedUserTime()=" + getElapsedUserTime() + ", getBlockCountDelta()=" + getBlockCountDelta()
+                + ", getWaitCountDelta()=" + getWaitCountDelta() + "]";
     }
 
 }

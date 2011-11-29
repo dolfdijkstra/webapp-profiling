@@ -47,15 +47,15 @@ public class MeasurementTest extends TestCase {
         }
         m.stop();
         long t = m.getElapsedTime();
-        System.out.println("elapsed: " + t);
+        System.out.println("getElapsedTime: " + t);
         long c = m.getElapsedCpuTime();
-        System.out.println(c);
+        System.out.println("getElapsedCpuTime: " + c);
         long u = m.getElapsedUserTime();
-        System.out.println(u);
+        System.out.println("getElapsedUserTime: " + u);
         long b = m.getBlockCountDelta();
-        System.out.println(b);
+        System.out.println("getBlockCountDelta: " + b);
         long w = m.getWaitCountDelta();
-        System.out.println(w);
+        System.out.println("getWaitCountDelta: " + w);
 
     }
 
@@ -68,9 +68,9 @@ public class MeasurementTest extends TestCase {
             public void run() {
                 System.out.println("started");
                 synchronized (o) {
-                    
+
                     System.out.println("in synchronized block");
-                    System.out.println("state of starting thread "+current.getState());
+                    System.out.println("state of starting thread " + current.getState());
                     System.out.println("notifyAll");
                     o.notifyAll();
                 }
@@ -82,9 +82,9 @@ public class MeasurementTest extends TestCase {
         synchronized (o) {
             System.out.println("starting");
             x.start();
-            
+
             try {
-                System.out.println("state of notifying thread "+x.getState());
+                System.out.println("state of notifying thread " + x.getState());
                 System.out.println("waiting");
                 o.wait();
                 System.out.println("done waiting");
@@ -111,13 +111,13 @@ public class MeasurementTest extends TestCase {
             System.nanoTime();
             System.nanoTime();
         }
-        System.out.println((System.nanoTime() - start) / count);
+        System.out.println("System.nanoTime() measurement: " + (System.nanoTime() - start) / count);
         start = System.nanoTime();
         for (int o = 0; o < count; o++) {
             System.currentTimeMillis();
             System.currentTimeMillis();
         }
-        System.out.println((System.nanoTime() - start) / count);
+        System.out.println("System.currentTimeMillis() measurement: " + (System.nanoTime() - start) / count);
 
         final boolean c[] = new boolean[] { true, false, true, false };
         final boolean t[] = new boolean[] { true, true, false, false };
@@ -151,10 +151,10 @@ public class MeasurementTest extends TestCase {
             t.stop();
         }
         m.stop();
-        System.out.println(time + "/" + count + " " + c
-                + " measurements took: "
-                + Long.toString(m.getElapsedTime() / 1000) + " us, on average "
+        System.out.println("time: " + (time ? " true" : "false") + ", count: " + (count ? " true" : "false") + "\t" + c
+                + " measurements took: " + Long.toString(m.getElapsedTime() / 1000) + " us, on average "
                 + Double.toString(m.getElapsedTime() / c) + " ns");
+        //System.out.println(m.toString());
     }
 
     public void testResolution() {
@@ -166,8 +166,7 @@ public class MeasurementTest extends TestCase {
             stopTime = threadBean.getCurrentThreadCpuTime();
             count++;
         }
-        System.out.println("Resolution via CpuTime: " + (stopTime - startTime) + "ns in "
-                + count + " iterations.");
+        System.out.println("Resolution via CpuTime: " + (stopTime - startTime) + "ns in " + count + " iterations.");
 
     }
 
@@ -180,8 +179,7 @@ public class MeasurementTest extends TestCase {
             stopTime = threadBean.getCurrentThreadUserTime();
             count++;
         }
-        System.out.println("Resolution via UserTime: " + (stopTime - startTime) + "ns in "
-                + count + " iterations.");
+        System.out.println("Resolution via UserTime: " + (stopTime - startTime) + "ns in " + count + " iterations.");
 
     }
 
