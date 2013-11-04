@@ -17,15 +17,15 @@
 package com.fatwire.gst.web.servlet.profiling.logger;
 
 import java.lang.management.ManagementFactory;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.helpers.LogLog;
-
-import com.fatwire.gst.web.servlet.profiling.jmx.UnregisterMBeansCommand;
 
 public class Log4JAppenderLifeCycleManager implements LifeCycleManager {
 
@@ -49,12 +49,12 @@ public class Log4JAppenderLifeCycleManager implements LifeCycleManager {
                 log.setLevel(Level.DEBUG);
                 log.setAdditivity(false);
             }
-            StatisticsProvider provider=new StatisticsProvider(server);
-            TimeDebugParser parser =  new TimeDebugParser(provider);
+            StatisticsProvider provider = new StatisticsProvider(server);
+            TimeDebugParser parser = new TimeDebugParser(provider);
 
-            StatisticsAppender a = new StatisticsAppender(provider,parser);
+            StatisticsAppender a = new StatisticsAppender(provider, parser);
             a.setName("stats");
-            //a.setServer(server);
+            // a.setServer(server);
             a.activateOptions();
             log.addAppender(a);
         }
@@ -76,8 +76,8 @@ public class Log4JAppenderLifeCycleManager implements LifeCycleManager {
 
     private void removeMBeans() {
         try {
-            UnregisterMBeansCommand
-                    .unregister("com.fatwire.gst.web.servlet:type=StatFromTimeDebug,*");
+
+            unregister("com.fatwire.gst.web.servlet:type=StatFromTimeDebug,*");
         } catch (MalformedObjectNameException e) {
             LogLog.error(e.getMessage());
         } catch (NullPointerException e) {
@@ -89,6 +89,20 @@ public class Log4JAppenderLifeCycleManager implements LifeCycleManager {
         if (log != null) {
             log.removeAppender("stats");
         }
+    }
+
+    public void unregister(String query) throws MalformedObjectNameException, NullPointerException {
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        ObjectName name = ObjectName.getInstance(query);
+        Set<ObjectName> mbeans = server.queryNames(name, null);
+        for (ObjectName on : mbeans) {
+            try {
+                server.unregisterMBean(on);
+            } catch (Exception ee) {
+                log.error(ee.getMessage(), ee);
+            }
+        }
+
     }
 
 }

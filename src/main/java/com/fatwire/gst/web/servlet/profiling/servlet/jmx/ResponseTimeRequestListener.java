@@ -18,8 +18,11 @@ package com.fatwire.gst.web.servlet.profiling.servlet.jmx;
 
 import java.lang.management.ManagementFactory;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -30,10 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.fatwire.gst.web.servlet.profiling.jmx.UnregisterMBeansCommand;
-
-public class ResponseTimeRequestListener implements ServletRequestListener,
-        ServletContextListener {
+public class ResponseTimeRequestListener implements ServletRequestListener, ServletContextListener {
 
     private final Log log = LogFactory.getLog(this.getClass());
 
@@ -55,13 +55,12 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
 
     };
 
-    private Map<String, ResponseTimeStatistic> names = new ConcurrentHashMap<String, ResponseTimeStatistic>(
-            800, 0.75f, 400);
+    private Map<String, ResponseTimeStatistic> names = new ConcurrentHashMap<String, ResponseTimeStatistic>(800, 0.75f,
+            400);
 
     public void requestDestroyed(ServletRequestEvent event) {
         if (event.getServletRequest() instanceof HttpServletRequest) {
-            HttpServletRequest request = (HttpServletRequest) event
-                    .getServletRequest();
+            HttpServletRequest request = (HttpServletRequest) event.getServletRequest();
             Measurement m = time.get();
             m.stop();
 
@@ -94,7 +93,7 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
     public void contextDestroyed(ServletContextEvent sce) {
         time = null;
         try {
-            UnregisterMBeansCommand.unregister(MBEAN_NAME + ",*");
+            unregister(MBEAN_NAME + ",*");
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
@@ -102,16 +101,27 @@ public class ResponseTimeRequestListener implements ServletRequestListener,
     }
 
     public void contextInitialized(ServletContextEvent sce) {
-        log.debug("contextInitialized "
-                + sce.getServletContext().getServletContextName());
+        log.debug("contextInitialized " + sce.getServletContext().getServletContextName());
         try {
 
-            ManagementFactory.getPlatformMBeanServer().registerMBean(root,
-                    ObjectName.getInstance(MBEAN_NAME));
+            ManagementFactory.getPlatformMBeanServer().registerMBean(root, ObjectName.getInstance(MBEAN_NAME));
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
 
     }
 
+    public void unregister(String query) throws MalformedObjectNameException, NullPointerException {
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        ObjectName name = ObjectName.getInstance(query);
+        Set<ObjectName> mbeans = server.queryNames(name, null);
+        for (ObjectName on : mbeans) {
+            try {
+                server.unregisterMBean(on);
+            } catch (Exception ee) {
+                log.error(ee.getMessage(), ee);
+            }
+        }
+
+    }
 }
