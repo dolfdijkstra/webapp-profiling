@@ -50,40 +50,7 @@ Deployment
     
   All of the tools can be downloaded as {{{http://www.nl.fatwire.com/maven2/com/fatwire/gst/gst-webapp-profiling/ }packaged in a single jar file}}.
   
-  
-Status servlet filter
-  
-  ContentServer has no api to set http response status. Many customers believe that this is a severe limitation and 
-  this filter works around this limitation. 
-  It allows (outer) <<xml elements>> to set the http response status. 
-  Technically you can set the special header from any called xml element, as long as no jsp element has been called yet.  
-  
 
-  The header that needs to be set by the xml element is "X-Fatwire-Status". The most useful use cases are for status <<<404>>> and <<<302>>>. 
-  For the <<<302>>> status also the 'Location' header needs to be specified.
-  Sample code would be \<ICS.STREAMHEADER NAME="X-Fatwire-Status" VALUE="404"/\>. 
-  In this case Satellite server will set the http response code to 404.  
-
-  Another header that is handled by this filter is "X-Fatwire-Header". The use case for this header is limited, as normal http headers can be set with ics.StreamHeader() or \<ICS.STREAMHEADER NAME="Header Name" VALUE="Header Value"/\>. Sample code for this header: \<ICS.STREAMHEADER NAME="X-Fatwire-Header" VALUE="foo|bar"/\>. 
-  At Satellite server the header foo with value bar will be set. 
-  
-  <<Warning>>: the implementation uses response.setStatus() and not response.sendError(). This might have implications for the invoking of error handlers defined in the web.xml. 
-
-  
--------
-  <filter>
-    <filter-name>CustomHeaderFilter</filter-name>
-    <filter-class>com.fatwire.gst.web.servlet.httpstatus.CustomHeaderFilter</filter-class>
-  </filter>
-  
-  <filter-mapping>
-    <filter-name>CustomHeaderFilter</filter-name>
-    <url-pattern>/Satellite/*</url-pattern>
-    <dispatcher>REQUEST</dispatcher>
-  </filter-mapping>
----------
- 
-  
   
 Response time profilters
   
@@ -129,7 +96,7 @@ Response time profilters
 * LoggerFilter
   
   Prints to the log <<<com.fatwire.gst.web.servlet.profiling.servlet.filter.LoggerFilter>>> with INFO level: <<<sessionid | url in elapsed ms>>>.
-  Very usefull to take requests that take a long time, as well as to group requests based on session id.
+  Very usefull to track requests that take a long time, as well as to group requests based on session id.
   
 --------
   <filter>
@@ -202,7 +169,7 @@ Response time profilters
 [2011-11-24 13:36:17,340] [DEBUG] [         http-8180-5] [1322128665613][fatwire.logging.cs.time] Executed request 1322128665613 'http://localhost:8180/cs/ContentServer?pagename=OpenMarket/Xcelerate/Search/Event' in 8 ms 
 --------
 
-  The futurense.txt is also logging the request-id from threads started by the requets, as can be seen for the SearchEvent.
+  The futurense.txt is also logging the request-id from threads started by the requests, as can be seen for the SearchEvent.
   
 --------
 
@@ -416,35 +383,6 @@ period	name	elapsed	nesting	counter
 [images/time-debug-sql.png] 
   
 
-
-~~experimental, not tested as a version that also works for out of the box logger. This is at this moment not complete, as the common-logging factory class needs to be written.
-~~com.fatwire.gst.web.servlet.profiling.logger.ft.TraditionalInterceptor
-  
-  
-CacheManager JMX tool
-  
-  This tools allows to inspect the status of the ContentServer resultset caches over JMX. 
-
-----------  
-  <listener>
-  	<listener-class>com.fatwire.gst.web.servlet.profiling.jmx.JmxActivator</listener-class>
-  </listener>
-----------  
-  
-  and some screenshots:
-  
-  Overview
-  
-[images/jmx-overview.png]
-
-  Detail of a ContentServer cache  
-
-[images/jmx-caches.png]
-
-  Detail of a ContentServer cache
-
-[images/jmx-cache-detail.png]
-  
   
 Debug
   
@@ -566,20 +504,6 @@ Various
   </filter-mapping>
 --------  
   
-  
-* VersionListener
-  
-  Adds ContentServer version information to JMX beans under the name scope <<<com.fatwire.gst.web.servlet:type=Version>>>
- 
----------  
-  <listener>
-  	<listener-class>com.fatwire.gst.web.servlet.profiling.version.VersionListener</listener-class>
-  </listener>
--------  
-  
-  Here is a screenshot of the JMX information in jconsole:
-
-[images/jmx-version.png]
   
 Debug
   
@@ -704,10 +628,5 @@ requestedSessionId=null
 =============================================
 ---------  
   
-~~Highly Experimental:
-  
-~~* com.fatwire.gst.web.servlet.profiling.servlet.filter.SessionLessSatelliteFilter
-  
-~~  This is an attempt to makde the remote satellite server stateless.
   
 
