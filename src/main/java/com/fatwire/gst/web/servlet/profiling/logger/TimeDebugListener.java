@@ -19,6 +19,7 @@ package com.fatwire.gst.web.servlet.profiling.logger;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.Log4JLogger;
 
@@ -48,7 +49,7 @@ public class TimeDebugListener implements ServletContextListener {
     boolean isLog4JEnabled() {
         try {
             return Log4JLogger.class.isInstance(LogFactory
-                    .getLog(COM.FutureTense.Util.ftMessage.TIME_DEBUG));
+                    .getLog("com.fatwire.logging.cs.time"));
         } catch (Throwable e) {
             return false;
         }
