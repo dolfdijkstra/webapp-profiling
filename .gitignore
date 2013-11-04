@@ -1,0 +1,48 @@
+/gst-foundation-all/dependency-reduced-pom.xml
+#################
+## Eclipse
+#################
+
+*.pydevproject
+.project
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+# Maven
+target
+
+#################
+## IntelliJ IDEA
+#################
+
+*.iml
+*.iws
+*.ipr
+
+#################
+## Mac metadata
+#################
+
+.DS_Store
+
