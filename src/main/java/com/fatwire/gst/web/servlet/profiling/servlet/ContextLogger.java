@@ -39,12 +39,17 @@ public class ContextLogger implements ServletContextListener {
         log.info("MinorVersion: " + sc.getMinorVersion());
         log.info("ServletContextName: " + sc.getServletContextName());
 
-        for (final Enumeration<String> e = sc.getInitParameterNames(); e
-                .hasMoreElements();) {
+        for (final Enumeration<String> e = sc.getInitParameterNames(); e.hasMoreElements();) {
             final String name = e.nextElement();
             log.info("Init-Param: " + name + "=" + sc.getInitParameter(name));
 
         }
+        for (final Enumeration<String> e = sc.getAttributeNames(); e.hasMoreElements();) {
+            final String name = e.nextElement();
+            log.info("Attribute: " + name + "=" + String.valueOf(sc.getAttribute(name)));
+
+        }
+
     }
 
     /* (non-Javadoc)
