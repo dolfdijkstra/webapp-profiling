@@ -111,7 +111,7 @@ public class ResponseTimeRequestListener implements ServletRequestListener, Serv
 
     }
 
-    public void unregister(String query) throws MalformedObjectNameException, NullPointerException {
+    protected void unregister(String query) throws MalformedObjectNameException, NullPointerException {
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         ObjectName name = ObjectName.getInstance(query);
         Set<ObjectName> mbeans = server.queryNames(name, null);
