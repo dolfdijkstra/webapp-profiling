@@ -21,9 +21,9 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Enumeration;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -33,8 +33,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import COM.FutureTense.Servlet.SContentServer;
 
 public class InfoServlet extends HttpServlet {
 
@@ -107,7 +105,6 @@ public class InfoServlet extends HttpServlet {
             printInitParameters(getServletContext());
             printCurrentThreadGroup();
             printAllThreads();
-            printClassFolder();
             printAddresses();
             printTableClose();
 
@@ -307,11 +304,6 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printClassFolder() throws Exception {
-            printTableSectionTitle("ContentServer deployment folder");
-            final Class<SContentServer> csClass = COM.FutureTense.Servlet.SContentServer.class;
-            printTableRow("SContentServer loaded from", csClass.getResource("SContentServer.class").toString());
-        }
 
         private void printCurrentThreadGroup() throws Exception {
             printTableSectionTitle("<a name=\"Threads\"></a>Threads in the current thread group");
