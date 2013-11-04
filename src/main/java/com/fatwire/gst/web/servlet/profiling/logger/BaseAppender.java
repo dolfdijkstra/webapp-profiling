@@ -28,7 +28,7 @@ import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.OptionHandler;
 
 /**
- * Rewrite of AppenderSkeleton without synchronization oeverhead
+ * Rewrite of AppenderSkeleton without synchronization overhead
  * 
  * @author Dolf.Dijkstra
  * @since Jun 30, 2009
