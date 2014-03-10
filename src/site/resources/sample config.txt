@@ -1,0 +1,36 @@
+sample config
+
+	<listener>
+		<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.RequestIdLogger</listener-class>
+	</listener>
+	<listener>
+		<listener-class>com.fatwire.gst.metrics.servlet.MetricsServletListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeRequestListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>com.fatwire.gst.web.status.StatusRequestListener</listener-class>
+	</listener>
+	<servlet>
+		<servlet-name>status</servlet-name>
+		<servlet-class>com.fatwire.gst.web.status.servlet.StatusServlet</servlet-class>
+		<load-on-startup>5</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>status</servlet-name>
+		<url-pattern>/admin/status/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>perf-timing</servlet-name>
+		<servlet-class>com.fatwire.gst.web.servlet.profiling.servlet.ResponseTimeServlet</servlet-class>
+		<load-on-startup>5</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>perf-timing</servlet-name>
+		<url-pattern>/admin/perf/*</url-pattern>
+	</servlet-mapping>
+
