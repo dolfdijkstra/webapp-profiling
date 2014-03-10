@@ -95,6 +95,17 @@ public class ResponseTimeController {
     }
 
     private View handleConfigure(final HttpServletRequest request, final HttpServletResponse resp) {
+        if(request.getSession(false) ==null){
+            request.getSession(true);
+            return new View() {
+
+                @Override
+                public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+                    response.sendRedirect(request.getRequestURL().toString() );
+                }
+
+            };
+        }
         final ResponseTimeStats stats = ResponseTimeRequestListener.getResponseTimeStatistic(context);
         if ("POST".equalsIgnoreCase(request.getMethod()) && checkValidSubmit(request)) {
             final boolean time = Boolean.parseBoolean(request.getParameter(TIME2));
