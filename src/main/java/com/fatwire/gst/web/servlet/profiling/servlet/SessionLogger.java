@@ -16,6 +16,8 @@
 
 package com.fatwire.gst.web.servlet.profiling.servlet;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.servlet.http.HttpSession;
@@ -30,28 +32,31 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * 
- * <p>To deploy this listener you need to:<br/>
+ * <p>
+ * To deploy this listener you need to:<br/>
  * <br/>
- * Add the compiled class to WEB-INF/classes, and add the following in web.xml to activate our SessionListener.<br/>
- *
+ * Add the compiled class to WEB-INF/classes, and add the following in web.xml
+ * to activate our SessionListener.<br/>
+ * 
  * &lt;listener&gt;<br/>
- *    &lt;listener-class&gt;com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger&lt;/listener-class&gt;<br/>
+ * &lt;listener-class&gt;com.fatwire.gst.web.servlet.profiling.servlet.
+ * SessionLogger&lt;/listener-class&gt;<br/>
  * &lt;/listener&gt;<br/>
- *<br/>
- *<br/>
- * To see any messages in the log file the 'com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger' loggger needs to be set to DEBUG level.<br/>
+ * <br/>
+ * <br/>
+ * To see any messages in the log file the
+ * 'com.fatwire.gst.web.servlet.profiling.servlet.SessionLogger' loggger needs
+ * to be set to DEBUG level.<br/>
  * <br/>
  * 
  */
 
-public class SessionLogger implements HttpSessionAttributeListener,
-        HttpSessionListener {
+public class SessionLogger implements HttpSessionAttributeListener, HttpSessionListener {
     private final Log log = LogFactory.getLog(this.getClass());
 
     private final HttpSessionActivationListener distributionListener = new MyHttpSessionActivationListener();
 
-    private static class MyHttpSessionActivationListener implements
-            HttpSessionActivationListener, java.io.Serializable {
+    private static class MyHttpSessionActivationListener implements HttpSessionActivationListener, java.io.Serializable {
         private static final Log log = LogFactory.getLog(SessionLogger.class);
         /**
          * 
@@ -60,16 +65,14 @@ public class SessionLogger implements HttpSessionAttributeListener,
 
         public void sessionDidActivate(final HttpSessionEvent event) {
             if (log.isDebugEnabled()) {
-                log.debug(buildDebugInfo(event.getSession(),
-                        "sessionDidActivate"));
+                log.debug(buildDebugInfo(event.getSession(), "sessionDidActivate"));
             }
 
         }
 
         public void sessionWillPassivate(final HttpSessionEvent event) {
             if (log.isDebugEnabled()) {
-                log.debug(buildDebugInfo(event.getSession(),
-                        "sessionWillPassivate"));
+                log.debug(buildDebugInfo(event.getSession(), "sessionWillPassivate"));
             }
 
         }
@@ -94,9 +97,8 @@ public class SessionLogger implements HttpSessionAttributeListener,
      * @see javax.servlet.http.HttpSessionAttributeListener#attributeAdded(javax.servlet.http.HttpSessionBindingEvent)
      */
     public void attributeAdded(final HttpSessionBindingEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("sessionAttributeAdded: '" + event.getSession().getId()
-                    + "' " + event.getName() + "="
+        if (log.isTraceEnabled()) {
+            log.trace("sessionAttributeAdded: '" + event.getSession().getId() + "' " + event.getName() + "="
                     + String.valueOf(event.getValue()));
         }
     }
@@ -107,9 +109,8 @@ public class SessionLogger implements HttpSessionAttributeListener,
      * @see javax.servlet.http.HttpSessionAttributeListener#attributeRemoved(javax.servlet.http.HttpSessionBindingEvent)
      */
     public void attributeRemoved(final HttpSessionBindingEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("sessionAttributeRemoved: '" + event.getSession().getId()
-                    + "' " + event.getName());
+        if (log.isTraceEnabled()) {
+            log.trace("sessionAttributeRemoved: '" + event.getSession().getId() + "' " + event.getName());
         }
     }
 
@@ -119,9 +120,8 @@ public class SessionLogger implements HttpSessionAttributeListener,
      * @see javax.servlet.http.HttpSessionAttributeListener#attributeReplaced(javax.servlet.http.HttpSessionBindingEvent)
      */
     public void attributeReplaced(final HttpSessionBindingEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("sessionAttributeReplaced '" + event.getSession().getId()
-                    + "' " + event.getName() + "="
+        if (log.isTraceEnabled()) {
+            log.trace("sessionAttributeReplaced '" + event.getSession().getId() + "' " + event.getName() + "="
                     + String.valueOf(event.getValue()));
         }
     }
@@ -129,8 +129,7 @@ public class SessionLogger implements HttpSessionAttributeListener,
     public void sessionCreated(final HttpSessionEvent event) {
         if (log.isDebugEnabled()) {
             log.debug(buildDebugInfo(event.getSession(), "sessionCreated"));
-            event.getSession().setAttribute("distributionListener",
-                    distributionListener);
+            event.getSession().setAttribute("distributionListener", distributionListener);
         }
 
     }
@@ -142,17 +141,33 @@ public class SessionLogger implements HttpSessionAttributeListener,
 
     }
 
+    private static ThreadLocal<DateFormat> tl = new ThreadLocal<DateFormat>() {
+
+        /* (non-Javadoc)
+         * @see java.lang.ThreadLocal#initialValue()
+         */
+        @Override
+        protected DateFormat initialValue() {
+            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        }
+
+    };
+
+    static String formatISO8601(long t) {
+        DateFormat df = tl.get();
+        return df.format(new Date(t));
+    }
+
     static String buildDebugInfo(final HttpSession session, final String method) {
         if (session == null || method == null) {
             return "";
         }
         final StringBuilder b = new StringBuilder(method);
         b.append(": '");
-        b.append(session.getId()).append("', lastAccessed: ").append(
-                new Date(session.getLastAccessedTime()) + ", created:").append(
-                new Date(session.getCreationTime())).append(
-                ", maxInactiveInterval: ").append(
-                session.getMaxInactiveInterval());
+        b.append(session.getId()).append("', lastAccessed: ")
+                .append(formatISO8601(session.getLastAccessedTime()) + ", created:")
+                .append(formatISO8601(session.getCreationTime())).append(", maxInactiveInterval: ")
+                .append(session.getMaxInactiveInterval());
         return b.toString();
 
     }

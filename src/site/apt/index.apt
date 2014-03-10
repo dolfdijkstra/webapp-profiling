@@ -133,10 +133,11 @@ Response time profilters
 
 -------- 
 
-    Also add %X\{request-id\} to the Log4J appender.
+    Also add %X\{request-id\} and %X\{session-id\} %X\{CLIENTID} to the Log4J appender.
+~~~         PAGE and ELEMENT as possibly also  
     
 --------
-  log4j.appender.FWDefaultAppender.layout.ConversionPattern=[%d{ISO8601}] [%-5p] - %20.20t - %X{request-id} - %c{4} - %m%n
+  log4j.appender.FWDefaultAppender.layout.ConversionPattern=[%d{ISO8601}] [%-5p] [%t] [%X{request-id}] [%X{session-id}] [%X{CLIENTID}] [%c{4}] | %m%n
   
   # Add a seperate appender to log all time messages to a special file (time.log)
   
@@ -146,7 +147,7 @@ Response time profilters
   log4j.appender.TimeAppender.BufferSize=256
   log4j.appender.TimeAppender.encoding=UTF-8
   log4j.appender.TimeAppender.File=/data/CS/jsk761/ContentServer/7.6.0/time.log
-  log4j.appender.TimeAppender.layout.ConversionPattern=%d{ISO8601} %r %X{request-id} %m%n
+  log4j.appender.TimeAppender.layout.ConversionPattern=%d{ISO8601} %r %X{request-id} %X{session-id} %m%n
   log4j.appender.TimeAppender.layout=org.apache.log4j.PatternLayout
   log4j.appender.TimeAppender.MaxBackupIndex=15
   log4j.appender.TimeAppender.MaxFileSize=10MB
@@ -184,7 +185,7 @@ Response time profilters
 
 --------
   
-  In time.log the fields are slighly different from futuretense.txt. The fields are: timestamp, milliseconds passed since (appender) start, request id, message.
+  In time.log the fields are slightly different from futuretense.txt. The fields are: timestamp, milliseconds passed since (appender) start, request id, message.
 
 --------
 

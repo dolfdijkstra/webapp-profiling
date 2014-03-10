@@ -23,20 +23,34 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.MDC;
 
-public class RequestIdLogger implements ServletRequestListener {
-    private Log log = LogFactory.getLog("com.fatwire.logging.cs.time");
+public class RequestIdLogger implements ServletRequestListener, HttpSessionListener {
+    private static final String REMOTE_HOST = "remote-host";
+    private static final String REQUEST_ID = "request-id";
+    private static final String SESSION_ID = "session-id";
+    private Log log = LogFactory.getLog(RequestIdLogger.class);
     private AtomicLong idCounter = new AtomicLong(System.currentTimeMillis());
     private ThreadLocal<StartId> ids = new ThreadLocal<StartId>();
 
     public void requestInitialized(ServletRequestEvent sre) {
         long id = idCounter.incrementAndGet();
 
-        MDC.put("request-id", id);
+        MDC.put(REQUEST_ID, id);
+        MDC.put(REMOTE_HOST, sre.getServletRequest().getRemoteAddr() + ":" + sre.getServletRequest().getRemotePort());
+        if (sre.getServletRequest() instanceof HttpServletRequest) {
+            HttpSession s = ((HttpServletRequest) sre.getServletRequest()).getSession(false);
+            if (s != null) {
+                MDC.put(SESSION_ID, s.getId());
+            }
+        }
+
         if (log.isDebugEnabled()) {
 
             StartId si = new StartId();
@@ -54,12 +68,14 @@ public class RequestIdLogger implements ServletRequestListener {
             StartId si = ids.get();
             if (si != null) {
                 long id = si.id;
-                long elapsed = (System.nanoTime() - si.start) / 1000000L;
+                long elapsed = (System.nanoTime() - si.start) / 1000L;
 
-                log.debug("Executed request " + id + " '" + si.url + "' in " + (elapsed) + " ms");
+                log.debug("Executed request " + id + " '" + si.url + "' in " + (elapsed) + " us");
             }
         }
-        MDC.remove("request-id");
+        MDC.remove(REQUEST_ID);
+        MDC.remove(SESSION_ID);
+        MDC.remove(REMOTE_HOST);
 
     }
 
@@ -96,6 +112,21 @@ public class RequestIdLogger implements ServletRequestListener {
         long id;
         long start;
         String url;
+    }
+
+    @Override
+    public void sessionCreated(HttpSessionEvent se) {
+        HttpSession s = se.getSession();
+        if (s != null) {
+            MDC.put(SESSION_ID, s.getId());
+        }
+
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent se) {
+        MDC.remove(SESSION_ID);
+
     }
 
 }

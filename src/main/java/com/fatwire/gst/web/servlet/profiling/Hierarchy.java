@@ -21,18 +21,20 @@ public class Hierarchy {
 
     private final Hierarchy parent;
 
-    public Hierarchy(String name) {
-        this(name,null);
+    public Hierarchy(final String name) {
+        this(name, null);
     }
-    private Hierarchy(String name, Hierarchy parent) {
+
+    private Hierarchy(final String name, final Hierarchy parent) {
         super();
-        if (name == null || name.length() == 0)
+        if ((name == null) || (name.length() == 0)) {
             throw new IllegalArgumentException("name can not be null or empty");
+        }
         this.name = name;
         this.parent = parent;
     }
 
-    public Hierarchy build(String name) {
+    public Hierarchy build(final String name) {
         return new Hierarchy(name, this);
     }
 
@@ -57,8 +59,8 @@ public class Hierarchy {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        result = prime * result + ((parent == null) ? 0 : parent.hashCode());
+        result = (prime * result) + ((name == null) ? 0 : name.hashCode());
+        result = (prime * result) + ((parent == null) ? 0 : parent.hashCode());
         return result;
     }
 
@@ -66,7 +68,7 @@ public class Hierarchy {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
@@ -76,7 +78,7 @@ public class Hierarchy {
         if (!(obj instanceof Hierarchy)) {
             return false;
         }
-        Hierarchy other = (Hierarchy) obj;
+        final Hierarchy other = (Hierarchy) obj;
         if (name == null) {
             if (other.name != null) {
                 return false;

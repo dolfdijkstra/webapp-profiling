@@ -22,8 +22,8 @@ package com.fatwire.gst.web.servlet.profiling.logger;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.spi.LoggingEvent;
 
-class StatisticsAppender extends BaseAppender {
-    static final String TIME_DEBUG = "com.fatwire.logging.cs.time";
+public class StatisticsAppender extends BaseAppender {
+    public static final String TIME_DEBUG = "com.fatwire.logging.cs.time";
 
     private StatisticsProvider provider;
 
@@ -31,14 +31,13 @@ class StatisticsAppender extends BaseAppender {
      * @param provider
      * @param parser
      */
-    public StatisticsAppender(StatisticsProvider provider,
-            TimeDebugParser parser) {
+    public StatisticsAppender(StatisticsProvider provider, SimpleTimeDebugParser parser) {
         super();
         this.provider = provider;
         this.parser = parser;
     }
 
-    private TimeDebugParser parser;// = new TimeDebugParser(this);
+    private SimpleTimeDebugParser parser;// = new SimpleTimeDebugParser(this);
 
     public Stat[] getStats() {
         return provider.getStats();
@@ -57,7 +56,7 @@ class StatisticsAppender extends BaseAppender {
         }
     }
 
-    //@Override
+    // @Override
     public void close() {
         if (closed)
             return;
@@ -65,7 +64,7 @@ class StatisticsAppender extends BaseAppender {
         provider.close();
     }
 
-    //@Override
+    // @Override
     public boolean requiresLayout() {
         return false;
     }

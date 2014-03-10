@@ -46,13 +46,13 @@ public class TimerFilter extends HttpFilter implements Filter {
     public void doFilter(HttpServletRequest request,
             HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         String url = Util.getFullUrl(request);
         try {
             chain.doFilter(request, response);
         } finally {
-            long end = System.currentTimeMillis();
-            log.debug(Long.toString(end - start) + " ms for " + url);
+            long end = System.nanoTime();
+            log.debug(Long.toString((end - start)/1000) + " us for " + url);
         }
 
     }

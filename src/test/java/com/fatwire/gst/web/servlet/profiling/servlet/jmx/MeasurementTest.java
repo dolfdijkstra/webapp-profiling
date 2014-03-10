@@ -20,7 +20,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import junit.framework.Assert;
+import org.junit.Assert;
+
 import junit.framework.TestCase;
 
 public class MeasurementTest extends TestCase {
@@ -35,7 +36,7 @@ public class MeasurementTest extends TestCase {
 
     public void testMeasure() throws InterruptedException {
 
-        Measurement m = new Measurement();
+        Measurement m = new Measurement(true, true, 0);
         m.start();
         Object o = new Object();
         synchronized (o) {
@@ -47,20 +48,20 @@ public class MeasurementTest extends TestCase {
         }
         m.stop();
         long t = m.getElapsedTime();
-        System.out.println("getElapsedTime: " + t);
+        System.out.printf("getElapsedTime:     %d%n", t);
         long c = m.getElapsedCpuTime();
-        System.out.println("getElapsedCpuTime: " + c);
+        System.out.printf("getElapsedCpuTime:  %d%n", c);
         long u = m.getElapsedUserTime();
-        System.out.println("getElapsedUserTime: " + u);
+        System.out.printf("getElapsedUserTime: %d%n", u);
         long b = m.getBlockCountDelta();
-        System.out.println("getBlockCountDelta: " + b);
+        System.out.printf("getBlockCountDelta: %d%n", b);
         long w = m.getWaitCountDelta();
-        System.out.println("getWaitCountDelta: " + w);
+        System.out.printf("getWaitCountDelta:  %d%n", w);
 
     }
 
     public void _testBlock() {
-        Measurement m = new Measurement();
+        Measurement m = new Measurement(true, true, 0);
         final Object o = new Object();
         final Thread current = Thread.currentThread();
         Thread x = new Thread() {
@@ -105,6 +106,7 @@ public class MeasurementTest extends TestCase {
     }
 
     public void testMeasurementPerformance() {
+        System.gc();
         final int count = 100000;
         long start = System.nanoTime();
         for (int o = 0; o < count; o++) {
@@ -112,13 +114,14 @@ public class MeasurementTest extends TestCase {
             System.nanoTime();
         }
         System.out.println("System.nanoTime() measurement: " + (System.nanoTime() - start) / count);
+        System.gc();
         start = System.nanoTime();
         for (int o = 0; o < count; o++) {
             System.currentTimeMillis();
             System.currentTimeMillis();
         }
         System.out.println("System.currentTimeMillis() measurement: " + (System.nanoTime() - start) / count);
-
+        System.gc();
         final boolean c[] = new boolean[] { true, false, true, false };
         final boolean t[] = new boolean[] { true, true, false, false };
         final AtomicInteger j = new AtomicInteger();
@@ -135,16 +138,15 @@ public class MeasurementTest extends TestCase {
             try {
                 x.join();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
     }
 
     public void measurement(boolean count, boolean time, int c) {
-        Measurement m = new Measurement();
+        Measurement m = new Measurement(true, true, 0);
         m.start();
-        Measurement t = new Measurement(time, count);
+        Measurement t = new Measurement(time, count, 0);
 
         for (int i = 0; i < c; i++) {
             t.start();
@@ -154,7 +156,7 @@ public class MeasurementTest extends TestCase {
         System.out.println("time: " + (time ? " true" : "false") + ", count: " + (count ? " true" : "false") + "\t" + c
                 + " measurements took: " + Long.toString(m.getElapsedTime() / 1000) + " us, on average "
                 + Double.toString(m.getElapsedTime() / c) + " ns");
-        //System.out.println(m.toString());
+
     }
 
     public void testResolution() {

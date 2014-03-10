@@ -27,7 +27,7 @@ import javax.management.ObjectName;
 
 import org.apache.log4j.helpers.LogLog;
 
-public class StatisticsProvider implements TimeDebugParser.ParserCallback, StatisticsProviderMBean {
+public class StatisticsProvider implements ParserCallback, StatisticsProviderMBean {
 
     public static String NAME = "com.fatwire.gst.web.servlet:type=StatisticsProvider";
 
@@ -73,9 +73,18 @@ public class StatisticsProvider implements TimeDebugParser.ParserCallback, Stati
         if (time > 3722801423L)
             return; // do not log large values do to bug in CS when turning on
                     // time debug.
-        Stat s = getStat(type, subType);
+        Stat s = "sql".equals(type) ? getStat(type, getStatementType(subType)) : getStat(type, subType);
         s.update(time);
 
+    }
+
+    private String getStatementType(String s) {
+
+        int t = s == null ? -1 : s.trim().indexOf(" ");
+        if (t != -1) {
+            return s.substring(0, t).toLowerCase();
+        }
+        return "unknown";
     }
 
     private Stat getStat(String type, String subType) {

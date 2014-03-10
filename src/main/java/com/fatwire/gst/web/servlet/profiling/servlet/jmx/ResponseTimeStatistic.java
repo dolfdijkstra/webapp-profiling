@@ -21,9 +21,9 @@ import java.math.RoundingMode;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
+
+    private final String name;
 
     private final AtomicInteger counter = new AtomicInteger();
 
@@ -38,6 +38,12 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
     private volatile BigDecimal total = BigDecimal.ZERO;
 
     private volatile BigDecimal systemTotal = BigDecimal.ZERO;
+
+    public ResponseTimeStatistic(String name) {
+        if (name == null || name.length() == 0)
+            throw new IllegalArgumentException("name cannot be null or empty");
+        this.name = name;
+    }
 
     public int getCount() {
         return counter.get();
@@ -55,12 +61,11 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
         int n = counter.get();
         if (n == 0)
             return 0;
-        return (total.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP)
-                .doubleValue());
+        return (total.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP).doubleValue());
 
     }
 
-    void signal(HttpServletRequest request, Measurement m) {
+    void signal(Measurement m) {
         counter.incrementAndGet();
         this.blockCounter.addAndGet(m.getBlockCountDelta());
         this.waitCounter.addAndGet(m.getWaitCountDelta());
@@ -70,13 +75,12 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
             long cpu = m.getElapsedCpuTime();
             long system = cpu - user;
             if (system > 0) {
-                this.systemTotal = this.systemTotal.add(BigDecimal
-                        .valueOf(system));
+                this.systemTotal = this.systemTotal.add(BigDecimal.valueOf(system));
             }
 
         }
 
-        long t = m.getElapsedTime() / 1000000;
+        long t = m.getElapsedTime() / 1000;
 
         total = total.add(BigDecimal.valueOf(t));
         minTime = Math.min(minTime, t);
@@ -109,6 +113,64 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
 
     public BigDecimal getTotalSystemTime() {
         return this.systemTotal;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+    }
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        ResponseTimeStatistic other = (ResponseTimeStatistic) obj;
+        if (name == null) {
+            if (other.name != null) {
+                return false;
+            }
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+        return true;
+    }
+
+    public void reset() {
+        counter.set(0);
+
+        blockCounter.set(0);
+
+        waitCounter.set(0);
+
+        minTime = Long.MAX_VALUE;
+
+        maxTime = 0;
+
+        total = BigDecimal.ZERO;
+
+        systemTotal = BigDecimal.ZERO;
+
+        
     }
 
 }

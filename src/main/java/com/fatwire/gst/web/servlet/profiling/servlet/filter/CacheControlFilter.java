@@ -50,14 +50,11 @@ public class CacheControlFilter implements Filter {
         ttlMap.clear();
     }
 
-    public void doFilter(final ServletRequest request,
-            ServletResponse response, FilterChain chain) throws IOException,
+    public void doFilter(final ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
-        if (response instanceof HttpServletResponse
-                && request instanceof HttpServletRequest) {
+        if (response instanceof HttpServletResponse && request instanceof HttpServletRequest) {
 
-            chain.doFilter(request, new HttpServletResponseWrapper(
-                    (HttpServletResponse) response) {
+            chain.doFilter(request, new HttpServletResponseWrapper((HttpServletResponse) response) {
 
                 private String cc = null;
 
@@ -68,8 +65,7 @@ public class CacheControlFilter implements Filter {
                 public void setHeader(String name, String value) {
                     if (CACHE_CONTROL.equalsIgnoreCase(name)) {
                         cc = value;
-                    } else if (cc == null
-                            && "Last-Modified".equalsIgnoreCase(name)) {
+                    } else if (cc == null && "Last-Modified".equalsIgnoreCase(name)) {
                         final int ttl = getCacheControlTTL((HttpServletRequest) request);
                         if (ttl > 0) {
                             super.setHeader(CACHE_CONTROL, "max-age=" + ttl);
@@ -86,26 +82,20 @@ public class CacheControlFilter implements Filter {
     }
 
     public void init(FilterConfig filterConfig) throws ServletException {
-        //alternative is to read from a config file
+        // alternative is to read from a config file
         String uri = filterConfig.getInitParameter("uri");
         if (uri == null || uri.length() == 0) {
-            log
-                    .warn("uri filter parameter is not set, the filter can not configure itself");
+            log.warn("uri filter parameter is not set, the filter can not configure itself");
         } else {
             URI u = URI.create(uri);
             InputStream in = null;
             try {
                 in = u.toURL().openStream();
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(in));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                 String s = null;
                 while ((s = reader.readLine()) != null) {
                     String[] parts = s.split("=");
-                    ttlMap.put(Pattern.compile(parts[0]), Integer
-                            .parseInt(parts[1]));
-                    //ttlMap.put("FSII/Article/Full", 300);
-                    //ttlMap.put("FSII/Document/Full", 900);
-
+                    ttlMap.put(Pattern.compile(parts[0]), Integer.parseInt(parts[1]));
                 }
 
             } catch (MalformedURLException e) {
@@ -123,7 +113,7 @@ public class CacheControlFilter implements Filter {
                     try {
                         in.close();
                     } catch (IOException e) {
-                        //ignore
+                        // ignore
                     }
                 }
             }
@@ -133,8 +123,8 @@ public class CacheControlFilter implements Filter {
     }
 
     protected int getCacheControlTTL(HttpServletRequest request) {
-        //here we are using the getPathInfo as the selector
-        //other more advanced implementations are also possible
+        // here we are using the getPathInfo as the selector
+        // other more advanced implementations are also possible
         if (request.getPathInfo() != null) {
             for (Map.Entry<Pattern, Integer> e : ttlMap.entrySet()) {
                 if (e.getKey().matcher(request.getPathInfo()).matches()) {

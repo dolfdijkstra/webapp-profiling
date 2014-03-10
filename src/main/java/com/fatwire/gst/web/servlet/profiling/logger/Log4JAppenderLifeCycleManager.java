@@ -50,7 +50,7 @@ public class Log4JAppenderLifeCycleManager implements LifeCycleManager {
                 log.setAdditivity(false);
             }
             StatisticsProvider provider = new StatisticsProvider(server);
-            TimeDebugParser parser = new TimeDebugParser(provider);
+            SimpleTimeDebugParser parser = new SimpleTimeDebugParser(provider);
 
             StatisticsAppender a = new StatisticsAppender(provider, parser);
             a.setName("stats");

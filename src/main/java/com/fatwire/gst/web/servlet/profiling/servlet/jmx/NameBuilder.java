@@ -22,30 +22,37 @@ import javax.servlet.http.HttpServletRequest;
 
 public class NameBuilder {
     private static final String UTF_8 = "UTF-8";
-    private final String[] parameters = new String[] { "pagename", "blobtable" };
+    private final String[] parameters = new String[] { "pagename", "blobtable", "c", "rendermode" };
 
     String sanitize(String s) {
         return s.replaceAll("[,=:\"*?]", "_");
     }
 
     String extractName(HttpServletRequest request) {
-
-        StringBuilder b = new StringBuilder(",path=").append(request.getRequestURI());
+        if (request == null)
+            return "UNKNOWN";
+        StringBuilder b = new StringBuilder("path=").append("\"").append(request.getRequestURI()).append("\"");
 
         for (String a : parameters) {
             if (request.getParameter(a) != null) {
                 b.append(',');
                 b.append(a);
                 b.append('=');
-                try {
-                    b.append(java.net.URLDecoder.decode(request.getParameter(a), UTF_8));
-                } catch (UnsupportedEncodingException e) {
-                    b.append(request.getParameter(a));
-                }
+                b.append("\"");
+                b.append(request.getParameter(a));
+                b.append("\"");
                 break;
             }
         }
         return b.toString();
     }
 
+    String decode(String a) {
+        try {
+            return java.net.URLDecoder.decode(a, UTF_8);
+        } catch (UnsupportedEncodingException e) {
+            return a;
+        }
+
+    }
 }

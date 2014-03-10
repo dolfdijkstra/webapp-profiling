@@ -26,7 +26,7 @@ import java.lang.management.ThreadMXBean;
 /**
  * <p>
  * Class to take a measurement. It is an advanced stopwatch. It records elapsed
- * time, as well as cpu user time, thread block and wait counts that happend
+ * time, as well as cpu user time, thread block and wait counts that happened
  * during the measurement period.
  * </p>
  * 
@@ -36,7 +36,7 @@ import java.lang.management.ThreadMXBean;
  * thread.
  * </p>
  * 
- * @author Dolf.Dijkstra
+ * @author Dolf Dijkstra
  * 
  */
 public class Measurement {
@@ -72,16 +72,28 @@ public class Measurement {
     private ThreadMXBean threadMXBean;
 
     private RunningState state = RunningState.STOPPED;
+    private final int generation;
 
     /**
      * 
-     * Manual override of the thread time and block counting
+     * Manual override of the thread time and block counting.
+     * <p>
+     * The impact of ThreadCpuTime and ThreadContentionMonitoring is roughly
+     * indicated as per these tests:
+     * 
+     * <pre>
+     * time: true,  count:  true   100000 measurements took: 2535127 us, on average 25351.0 ns
+     * time: true,  count: false   100000 measurements took: 1961359 us, on average 19613.0 ns
+     * time: false, count:  true   100000 measurements took:  170259 us, on average  1702.0 ns
+     * time: false, count: false   100000 measurements took:    4919 us, on average    49.0 ns
+     * </pre>
      * 
      * @param time {@link ThreadMXBean#setThreadCpuTimeEnabled(boolean)}
      * @param count {@link ThreadMXBean#setThreadContentionMonitoringEnabled(boolean)}
      */
 
-    public Measurement(boolean time, boolean count) {
+    public Measurement(boolean time, boolean count, int generation) {
+        this.generation = generation;
         threadMXBean = ManagementFactory.getThreadMXBean();
         if (time && threadMXBean.isCurrentThreadCpuTimeSupported()) {
             if (!threadMXBean.isThreadCpuTimeEnabled()) {
@@ -100,18 +112,10 @@ public class Measurement {
     }
 
     /**
-     * Default constructor with time=true and count=true)
-     */
-    public Measurement() {
-        this(true, true);
-
-    }
-
-    /**
      * To start a measurement
      * 
      */
-    void start() {
+    Measurement start() {
         if (state == RunningState.STARTED)
             throw new IllegalStateException("Measurement already started");
 
@@ -126,6 +130,7 @@ public class Measurement {
             startWaitCount = info.getWaitedCount();
         }
         this.startTime = System.nanoTime();
+        return this;
 
     }
 
@@ -133,7 +138,7 @@ public class Measurement {
      * To stop a started Measurement
      * 
      */
-    void stop() {
+    Measurement stop() {
         if (state == RunningState.STOPPED)
             throw new IllegalStateException("Measurement not running");
         state = RunningState.STOPPED;
@@ -146,9 +151,9 @@ public class Measurement {
             ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
             endBlockedCount = info.getBlockedCount();
             endWaitCount = info.getWaitedCount();
-            
-        }
 
+        }
+        return this;
     }
 
     /**
@@ -222,6 +227,13 @@ public class Measurement {
                 + ", getElapsedTime()=" + getElapsedTime() + ", getElapsedCpuTime()=" + getElapsedCpuTime()
                 + ", getElapsedUserTime()=" + getElapsedUserTime() + ", getBlockCountDelta()=" + getBlockCountDelta()
                 + ", getWaitCountDelta()=" + getWaitCountDelta() + "]";
+    }
+
+    /**
+     * @return the generation
+     */
+    public int getGeneration() {
+        return generation;
     }
 
 }

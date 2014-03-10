@@ -28,7 +28,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
@@ -40,7 +39,7 @@ import com.fatwire.gst.web.servlet.profiling.Hierarchy;
 import com.fatwire.gst.web.servlet.profiling.Measurement;
 import com.fatwire.gst.web.servlet.profiling.support.MeasurementImpl;
 
-public class ResponseTimeFilter extends HttpFilter implements Filter {
+public class ResponseTimeFilter extends HttpFilter {
     public static final String INCLUDE_REQUEST_URI = "javax.servlet.include.request_uri";
 
     public static final String INCLUDE_CONTEXT_PATH = "javax.servlet.include.context_path";
@@ -65,8 +64,7 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
 
     private String namefile;
 
-    private final SimpleDateFormat fmt = new SimpleDateFormat(
-            filenameDateFormat);
+    private final SimpleDateFormat fmt = new SimpleDateFormat(filenameDateFormat);
 
     private ServletContext context;
 
@@ -99,9 +97,8 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
     }
 
     @Override
-    protected void doFilter(final HttpServletRequest request,
-            final HttpServletResponse response, final FilterChain chain)
-            throws IOException, ServletException {
+    protected void doFilter(final HttpServletRequest request, final HttpServletResponse response,
+            final FilterChain chain) throws IOException, ServletException {
 
         final Hierarchy name = getName(request);
 
@@ -115,10 +112,9 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
             n.stop();
 
             current.stop();
-            final ResponseTimeEvent e = new ResponseTimeEvent(period, current
-                    .getStartTime(), name, current.elapsed() / 1000, level,
-                    n.counter, request.getRequestedSessionId(), request
-                            .getRemoteAddr(), request.getRemotePort());
+            final ResponseTimeEvent e = new ResponseTimeEvent(period, current.getStartTime(), name,
+                    current.elapsed() / 1000, level, n.counter, request.getRequestedSessionId(),
+                    request.getRemoteAddr(), request.getRemotePort());
 
             dispatchEvent(e);
 
@@ -141,8 +137,7 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
             }
         }
         if (request.getAttribute(INCLUDE_REQUEST_URI) != null) {
-            name = name.build(String.valueOf(request
-                    .getAttribute(INCLUDE_REQUEST_URI)));
+            name = name.build(String.valueOf(request.getAttribute(INCLUDE_REQUEST_URI)));
         }
 
         return name;
@@ -219,7 +214,7 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
                     try {
                         w.close();
                     } catch (final IOException e) {
-                        //ignore
+                        // ignore
                     }
                 }
             }
@@ -255,7 +250,7 @@ public class ResponseTimeFilter extends HttpFilter implements Filter {
                 try {
                     w.close();
                 } catch (final IOException e) {
-                    //ignore
+                    // ignore
                 }
             }
         }
@@ -308,14 +303,12 @@ class ResponseTimeEvent {
      * @param startTime
      * @param name
      * @param elapsed
-     * @param remotePort 
-     * @param remoteIP 
-     * @param sessionid 
+     * @param remotePort
+     * @param remoteIP
+     * @param sessionid
      */
-    public ResponseTimeEvent(final long period, final long startTime,
-            final Hierarchy name, final long elapsed, final int level,
-            final long counter, final String sessionid, final String remoteIP,
-            final int remotePort) {
+    public ResponseTimeEvent(final long period, final long startTime, final Hierarchy name, final long elapsed,
+            final int level, final long counter, final String sessionid, final String remoteIP, final int remotePort) {
         super();
         this.period = period;
         this.startTime = startTime;
@@ -333,8 +326,7 @@ class ResponseTimeEvent {
      */
     @Override
     public String toString() {
-        return new StringBuilder(Long.toString(period)).append('-')
-                .append(name).append('-').append(elapsed).toString();
+        return new StringBuilder(Long.toString(period)).append('-').append(name).append('-').append(elapsed).toString();
 
     }
 

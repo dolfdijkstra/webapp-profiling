@@ -16,14 +16,10 @@
 
 package com.fatwire.gst.web.servlet.profiling.servlet.jmx;
 
-import java.lang.management.ManagementFactory;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletRequestEvent;
@@ -34,94 +30,70 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class ResponseTimeRequestListener implements ServletRequestListener, ServletContextListener {
+    public static final String MBEAN_NAME = "com.fatwire.gst.web.servlet:type=ResponseTimeStatistic";
 
     private final Log log = LogFactory.getLog(this.getClass());
 
-    private static final String MBEAN_NAME = "com.fatwire.gst.web.servlet:type=ResponseTimeStatistic";
+    private static Map<String, ResponseTimeStats> contextMap = new ConcurrentHashMap<String, ResponseTimeStats>();
 
-    private NameBuilder nameBuilder = new NameBuilder();
+    private ResponseTimeStats contextStat;
 
-    private ResponseTimeStatistic root = new ResponseTimeStatistic();
+    public void requestInitialized(ServletRequestEvent event) {
+        if (event.getServletRequest() instanceof HttpServletRequest)
+            try {
+                contextStat.startMeasurement();
+            } catch (Throwable e) {
+                log.debug(e, e);
+            }
 
-    private ThreadLocal<Measurement> time = new ThreadLocal<Measurement>() {
-
-        /* (non-Javadoc)
-         * @see java.lang.ThreadLocal#initialValue()
-         */
-        @Override
-        protected Measurement initialValue() {
-            return new Measurement();
-        }
-
-    };
-
-    private Map<String, ResponseTimeStatistic> names = new ConcurrentHashMap<String, ResponseTimeStatistic>(800, 0.75f,
-            400);
+    }
 
     public void requestDestroyed(ServletRequestEvent event) {
         if (event.getServletRequest() instanceof HttpServletRequest) {
             HttpServletRequest request = (HttpServletRequest) event.getServletRequest();
-            Measurement m = time.get();
-            m.stop();
+            contextStat.finishMeasurement(request);
 
-            root.signal(request, m);
-            String name = nameBuilder.extractName(request);
-            ResponseTimeStatistic x = names.get(name);
-            if (x == null) {
-                x = new ResponseTimeStatistic();
-
-                names.put(name, x);
-                try {
-                    ManagementFactory.getPlatformMBeanServer().registerMBean(x,
-                            ObjectName.getInstance(MBEAN_NAME + name));
-                } catch (Exception e) {
-                    log.warn(e.getMessage() + " for " + MBEAN_NAME + name, e);
-                }
-            }
-            x.signal(request, m);
-
-        }
-
-    }
-
-    public void requestInitialized(ServletRequestEvent event) {
-        if (event.getServletRequest() instanceof HttpServletRequest)
-            time.get().start();
-
-    }
-
-    public void contextDestroyed(ServletContextEvent sce) {
-        time = null;
-        try {
-            unregister(MBEAN_NAME + ",*");
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
         }
 
     }
 
     public void contextInitialized(ServletContextEvent sce) {
         log.debug("contextInitialized " + sce.getServletContext().getServletContextName());
-        try {
+        boolean timeFlag = Boolean.parseBoolean(System.getProperty(ResponseTimeRequestListener.class.getName()
+                .toLowerCase() + ".time", "false"));
+        boolean countFlag = Boolean.parseBoolean(System.getProperty(ResponseTimeRequestListener.class.getName()
+                .toLowerCase() + ".count", "false"));
+        boolean onFlag = Boolean.parseBoolean(System.getProperty(ResponseTimeRequestListener.class.getName()
+                .toLowerCase() + ".on", "false"));
 
-            ManagementFactory.getPlatformMBeanServer().registerMBean(root, ObjectName.getInstance(MBEAN_NAME));
+        String path = getPath(sce.getServletContext());
+        contextStat = new ResponseTimeStats(MBEAN_NAME, path, true, onFlag, timeFlag, countFlag);
+        contextMap.put(path, contextStat);
+
+    }
+
+    public void contextDestroyed(ServletContextEvent sce) {
+        String path = getPath(sce.getServletContext());
+
+        contextMap.remove(path);
+        try {
+            contextStat.destroy();
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
+        contextStat = null;
 
     }
 
-    protected void unregister(String query) throws MalformedObjectNameException, NullPointerException {
-        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-        ObjectName name = ObjectName.getInstance(query);
-        Set<ObjectName> mbeans = server.queryNames(name, null);
-        for (ObjectName on : mbeans) {
-            try {
-                server.unregisterMBean(on);
-            } catch (Exception ee) {
-                log.error(ee.getMessage(), ee);
-            }
-        }
-
+    private static String getPath(ServletContext servletContext) {
+        String path = servletContext.getContextPath();
+        if (path == null)
+            path = "/";
+        return path;
     }
+
+    public static ResponseTimeStats getResponseTimeStatistic(ServletContext context) {
+        return contextMap.get(getPath(context));
+    }
+
 }
