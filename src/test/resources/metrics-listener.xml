@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+	<!-- <bean id="logger" class="com.fatwire.gst.metrics.listener.logging.CommonsLoggingListener"> 
+		</bean> -->
+	<bean id="fileWriter" class="com.fatwire.gst.metrics.listener.file.FileListener">
+	</bean>
+	<bean id="udp" class="com.fatwire.gst.metrics.listener.UDPListener">
+		<constructor-arg>
+			<bean id="udp-client" class="com.fatwire.gst.metrics.listener.udp.UDPClient">
+				<constructor-arg index="0" value="" />
+				<constructor-arg index="1" value="224.0.0.103" />
+				<constructor-arg index="2" value="18081" />
+				<constructor-arg index="3" value="1" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean id="metricsLog4Jparser"
+		class="com.fatwire.gst.metrics.sites.SitesTimeDebugMetricsProvider" />
+</beans>
