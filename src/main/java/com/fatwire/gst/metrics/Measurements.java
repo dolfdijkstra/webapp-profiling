@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,40 +22,45 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Metrics {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-    private final ThreadLocal<LinkedList<Metric>> tl = new ThreadLocal<LinkedList<Metric>>() {
+public class Measurements {
+
+    static Log LOG = LogFactory.getLog(Measurements.class);
+
+    private final ThreadLocal<LinkedList<StartEndMeasurement>> tl = new ThreadLocal<LinkedList<StartEndMeasurement>>() {
 
         /* (non-Javadoc)
          * @see java.lang.ThreadLocal#initialValue()
          */
         @Override
-        protected LinkedList<Metric> initialValue() {
-            return new LinkedList<Metric>();
+        protected LinkedList<StartEndMeasurement> initialValue() {
+            return new LinkedList<StartEndMeasurement>();
         }
 
     };
 
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean active = new AtomicBoolean(false);
-    private final Set<MetricListener> listeners = new CopyOnWriteArraySet<MetricListener>();
+    private final Set<MeasurementListener> listeners = new CopyOnWriteArraySet<MeasurementListener>();
 
     public boolean isActive() {
         return active.get();
     }
 
-    public boolean addListener(final MetricListener listener) {
+    public boolean addListener(final MeasurementListener listener) {
         active.compareAndSet(false, listener.isActive());
         return listeners.add(listener);
     }
 
-    public MetricListener[] getListeners() {
-        return listeners.toArray(new MetricListener[listeners.size()]);
+    public MeasurementListener[] getListeners() {
+        return listeners.toArray(new MeasurementListener[listeners.size()]);
     }
 
     @SuppressWarnings("unchecked")
     public <T> T getListener(Class<T> type) {
-        for (MetricListener l : getListeners()) {
+        for (MeasurementListener l : getListeners()) {
             if (type.isAssignableFrom(l.getClass())) {
                 return (T) l;
             }
@@ -67,10 +72,10 @@ public class Metrics {
         return counter.get();
     }
 
-    public boolean removeListener(final MetricListener listener) {
+    public boolean removeListener(final MeasurementListener listener) {
         final boolean b = active.get();
         final boolean r = listeners.remove(listener);
-        for (final MetricListener l : listeners) {
+        for (final MeasurementListener l : listeners) {
             if (l.isActive() != b) {
                 active.compareAndSet(b, l.isActive());
             }
@@ -82,28 +87,34 @@ public class Metrics {
     }
 
     public int start(final String type, final String msg, final Object... vals) {
-        final LinkedList<Metric> li = tl.get();
-        Metric m = li.peekLast();
+        final LinkedList<StartEndMeasurement> li = tl.get();
+        StartEndMeasurement m = li.peekLast();
         if (m == null) {
-            m = new Metric(counter.incrementAndGet(), 0, type, 0, msg, vals);
+            m = new StartEndMeasurement(counter.incrementAndGet(), 0, type, 0, msg, vals);
         } else {
-            m = new Metric(m.getId(), m.getLevel() + 1, type, m.getLevelZeroStart(), msg, vals);
+            m = new StartEndMeasurement(m.getId(), m.getLevel() + 1, type, m.getLevelZeroStart(), msg, vals);
         }
         li.addLast(m);
-        for (final MetricListener l : listeners) {
+        for (final MeasurementListener l : listeners) {
             l.start(m);
         }
         return m.getLevel();
     }
 
     public void measurement(final String type, final String msg, final long elapsed, final TimeUnit unit) {
-        final LinkedList<Metric> li = tl.get();
-        final Metric m = li.peekLast();
+        final LinkedList<StartEndMeasurement> li = tl.get();
+        final StartEndMeasurement m = li.peekLast();
         if (m != null) {
-            final Measurement me = new Measurement(m.getId(), m.getLevel() + 1, type, msg,
-                    TimeUnit.NANOSECONDS.convert(elapsed, unit), m.getLevelZeroStart());
-            for (final MetricListener l : listeners) {
-                l.measurement(me);
+            long startTime = System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(elapsed, unit);
+            final Measurement me = new Measurement(m.getId(), m.getLevel() + 1, type, startTime,
+                    TimeUnit.NANOSECONDS.convert(elapsed, unit), m.getLevelZeroStart(), msg);
+            for (final MeasurementListener l : listeners) {
+                try {
+                    l.measurement(me);
+                } catch (Exception e) {
+                    LOG.error(e.getMessage(), e);
+                }
+
             }
 
         }
@@ -121,14 +132,18 @@ public class Metrics {
 
     public int stop() {
         final long nano = System.nanoTime();
-        final LinkedList<Metric> li = tl.get();
-        final Metric m = li.pollLast();
+        final LinkedList<StartEndMeasurement> li = tl.get();
+        final StartEndMeasurement m = li.pollLast();
         if (m == null) {
             throw new IllegalStateException("no metric found");
         }
         m.setEnd(nano);
-        for (final MetricListener l : listeners) {
-            l.stop(m);
+        for (final MeasurementListener l : listeners) {
+            try {
+                l.stop(m);
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+            }
         }
 
         return m.getLevel();

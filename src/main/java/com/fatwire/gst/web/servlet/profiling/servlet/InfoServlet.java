@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.util.Map.Entry;
@@ -51,48 +51,21 @@ public class InfoServlet extends HttpServlet {
     @Override
     protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException,
             IOException {
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html");
-        final PrintWriter out = response.getWriter();
         try {
-            new View(out).doView(request, response);
-        } catch (final Exception e) {
+            new InfoView().render(request, response);
+        } catch (final IOException e) {
             throw new ServletException(e.getMessage(), e);
         }
     }
 
-    class Page {
+    class InfoView implements View {
+        private PrintWriter out;
 
-        void doDTD() {
-
-        }
-
-        void doHeader() {
-
-        }
-
-        void doBody() {
-
-        }
-
-        void doEnd() {
-
-        }
-
-    }
-
-    class View {
-        private final PrintWriter out;
-
-        /**
-         * @param out
-         */
-        public View(final PrintWriter out) {
-            super();
-            this.out = out;
-        }
-
-        void doView(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+        @Override
+        public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("text/html");
+            out = response.getWriter();
             printTableOpen();
             printVMInfo();
             printRequestDetails(request, response);
@@ -110,19 +83,19 @@ public class InfoServlet extends HttpServlet {
 
         }
 
-        private void printTableOpen() throws Exception {
+        private void printTableOpen() {
             out.print("<table>");
         }
 
-        private void printTableClose() throws Exception {
+        private void printTableClose() {
             out.print("</table>");
         }
 
-        private void printTableSectionTitle(final String title) throws Exception {
+        private void printTableSectionTitle(final String title) {
             printTableSectionTitle(title, 2);
         }
 
-        private void printTableSectionTitle(final String title, final int span) throws Exception {
+        private void printTableSectionTitle(final String title, final int span) {
             out.print("<tr>");
             out.print("<th colspan=\"" + span + "\">");
             out.print(title);
@@ -130,7 +103,7 @@ public class InfoServlet extends HttpServlet {
             out.print("</tr>");
         }
 
-        private void printTableRow(final String... cellValues) throws Exception {
+        private void printTableRow(final String... cellValues) {
             out.print("<tr>");
             for (final String cell : cellValues) {
                 out.print("<td>");
@@ -141,7 +114,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printInitParameters(final ServletContext context) throws Exception {
+        private void printInitParameters(final ServletContext context) {
             printTableSectionTitle("Context init parameters");
             final Enumeration<String> enum1 = context.getInitParameterNames();
             while (enum1.hasMoreElements()) {
@@ -152,7 +125,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printAttributes(final ServletRequest request, final ServletContext context) throws Exception {
+        private void printAttributes(final ServletRequest request, final ServletContext context) {
             printTableSectionTitle("Context attributes");
             final Enumeration<String> enum2 = context.getAttributeNames();
             try {
@@ -177,7 +150,7 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printSystemProperties() throws Exception {
+        private void printSystemProperties() {
             printTableSectionTitle("<a name=\"SystemP\"></a>System Properties");
             final Properties pSystem = System.getProperties();
 
@@ -193,7 +166,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         private void printRequestDetails(final javax.servlet.http.HttpServletRequest request,
-                final javax.servlet.http.HttpServletResponse response) throws Exception {
+                final javax.servlet.http.HttpServletResponse response) {
             final ServletConfig config = InfoServlet.this.getServletConfig();
             printTableSectionTitle("Servlet Information");
             printTableRow("Protocol", request.getProtocol().trim());
@@ -223,7 +196,7 @@ public class InfoServlet extends HttpServlet {
             printTableRow("Auth Type", request.getAuthType());
         }
 
-        private void printRequestParameters(final javax.servlet.http.HttpServletRequest request) throws Exception {
+        private void printRequestParameters(final javax.servlet.http.HttpServletRequest request) {
             printTableSectionTitle("Parameter names in this request");
             final StringBuilder sbOut = new StringBuilder();
             final Enumeration<?> e2 = request.getParameterNames();
@@ -240,7 +213,7 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printRequestCookies(final javax.servlet.http.HttpServletRequest request) throws Exception {
+        private void printRequestCookies(final javax.servlet.http.HttpServletRequest request) {
             printTableSectionTitle("Cookies in this request");
             final Cookie[] cookies = request.getCookies();
             if (null != cookies) {
@@ -253,14 +226,14 @@ public class InfoServlet extends HttpServlet {
 
         @SuppressWarnings("unchecked")
         private void printSessionInfo(final javax.servlet.http.HttpServletRequest request,
-                final javax.servlet.http.HttpSession session) throws Exception {
+                final javax.servlet.http.HttpSession session) {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.sss zzz");
             printTableSectionTitle("Session information in this request");
             printTableRow("Requested Session Id", "" + request.getRequestedSessionId());
             printTableRow("Current Session Id", "" + session.getId());
             printTableRow("Session Created Time", "" + sdf.format(new java.util.Date(session.getCreationTime())));
-            printTableRow("Session Last Accessed Time", ""
-                    + sdf.format(new java.util.Date(session.getLastAccessedTime())));
+            printTableRow("Session Last Accessed Time",
+                    "" + sdf.format(new java.util.Date(session.getLastAccessedTime())));
             printTableRow("Session Max Inactive Interval Seconds", "" + session.getMaxInactiveInterval());
 
             printTableSectionTitle("Session scoped attributes");
@@ -272,7 +245,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         @SuppressWarnings("unchecked")
-        private void printRequestHeaders(final javax.servlet.http.HttpServletRequest request) throws Exception {
+        private void printRequestHeaders(final javax.servlet.http.HttpServletRequest request) {
             printTableSectionTitle("<a name=\"RequestH\"></a>Request headers");
             final Enumeration<String> e1 = request.getHeaderNames();
             while (e1.hasMoreElements()) {
@@ -283,7 +256,7 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printVMInfo() throws Exception {
+        private void printVMInfo() {
             printTableSectionTitle("Java VM Information");
             final Runtime rt = Runtime.getRuntime();
             // printTableRow("Max Memory", "" + rt.maxMemory() + " bytes");
@@ -291,21 +264,24 @@ public class InfoServlet extends HttpServlet {
             printTableRow("Free Memory", "" + rt.freeMemory() + " bytes");
         }
 
-        private void printAddresses() throws Exception {
+        private void printAddresses() {
             printTableSectionTitle("AppServer DNS Names and IP Addresses", 3);
 
-            final InetAddress local = InetAddress.getLocalHost();
-            final InetAddress[] localList = InetAddress.getAllByName(local.getHostName());
+            try {
+                final InetAddress local = InetAddress.getLocalHost();
+                final InetAddress[] localList = InetAddress.getAllByName(local.getHostName());
 
-            for (int i = 0; i < localList.length; i++) {
-                final String sHostName = localList[i].getHostName();
-                final String sHostIP = localList[i].getHostAddress();
-                printTableRow(sHostName, sHostIP, localList[i].getCanonicalHostName());
+                for (int i = 0; i < localList.length; i++) {
+                    final String sHostName = localList[i].getHostName();
+                    final String sHostIP = localList[i].getHostAddress();
+                    printTableRow(sHostName, sHostIP, localList[i].getCanonicalHostName());
+                }
+            } catch (UnknownHostException e) {
+                // e.printStackTrace();
             }
         }
 
-
-        private void printCurrentThreadGroup() throws Exception {
+        private void printCurrentThreadGroup() {
             printTableSectionTitle("<a name=\"Threads\"></a>Threads in the current thread group");
 
             final Thread current = Thread.currentThread();
@@ -320,7 +296,7 @@ public class InfoServlet extends HttpServlet {
             }
         }
 
-        private void printAllThreads() throws Exception {
+        private void printAllThreads() {
             printTableSectionTitle("All the threads in the java VM");
             ThreadGroup group = Thread.currentThread().getThreadGroup();
             ThreadGroup rootGroup = null;
@@ -341,5 +317,6 @@ public class InfoServlet extends HttpServlet {
                 printTableRow("Thread" + i, threadList1[i].toString());
             }
         }
+
     }
 }

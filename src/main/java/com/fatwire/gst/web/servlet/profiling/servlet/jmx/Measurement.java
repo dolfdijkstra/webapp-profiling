@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * 
  */
@@ -25,15 +24,13 @@ import java.lang.management.ThreadMXBean;
 
 /**
  * <p>
- * Class to take a measurement. It is an advanced stopwatch. It records elapsed
- * time, as well as cpu user time, thread block and wait counts that happened
- * during the measurement period.
+ * Class to take a measurement. It is an advanced stopwatch. It records elapsed time, as well as cpu user time, thread
+ * block and wait counts that happened during the measurement period.
  * </p>
  * 
  * 
  * <p>
- * This class is not thread-safe. It should be used (by design) in only one
- * thread.
+ * This class is not thread-safe. It should be used (by design) in only one thread.
  * </p>
  * 
  * @author Dolf Dijkstra
@@ -69,7 +66,7 @@ public class Measurement {
 
     private boolean measureCount = false;
 
-    private ThreadMXBean threadMXBean;
+    private final ThreadMXBean threadMXBean;
 
     private RunningState state = RunningState.STOPPED;
     private final int generation;
@@ -78,8 +75,7 @@ public class Measurement {
      * 
      * Manual override of the thread time and block counting.
      * <p>
-     * The impact of ThreadCpuTime and ThreadContentionMonitoring is roughly
-     * indicated as per these tests:
+     * The impact of ThreadCpuTime and ThreadContentionMonitoring is roughly indicated as per these tests:
      * 
      * <pre>
      * time: true,  count:  true   100000 measurements took: 2535127 us, on average 25351.0 ns
@@ -92,7 +88,7 @@ public class Measurement {
      * @param count {@link ThreadMXBean#setThreadContentionMonitoringEnabled(boolean)}
      */
 
-    public Measurement(boolean time, boolean count, int generation) {
+    public Measurement(final boolean time, final boolean count, final int generation) {
         this.generation = generation;
         threadMXBean = ManagementFactory.getThreadMXBean();
         if (time && threadMXBean.isCurrentThreadCpuTimeSupported()) {
@@ -116,8 +112,9 @@ public class Measurement {
      * 
      */
     Measurement start() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Measurement already started");
+        }
 
         state = RunningState.STARTED;
         if (measureCpuTime) {
@@ -125,7 +122,7 @@ public class Measurement {
             startCpuTime = threadMXBean.getCurrentThreadCpuTime();
         }
         if (measureCount) {
-            ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
+            final ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
             startBlockedCount = info.getBlockedCount();
             startWaitCount = info.getWaitedCount();
         }
@@ -139,8 +136,9 @@ public class Measurement {
      * 
      */
     Measurement stop() {
-        if (state == RunningState.STOPPED)
+        if (state == RunningState.STOPPED) {
             throw new IllegalStateException("Measurement not running");
+        }
         state = RunningState.STOPPED;
         this.endTime = System.nanoTime();
         if (measureCpuTime) {
@@ -148,7 +146,7 @@ public class Measurement {
             endCpuTime = threadMXBean.getCurrentThreadCpuTime();
         }
         if (measureCount) {
-            ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
+            final ThreadInfo info = threadMXBean.getThreadInfo(Thread.currentThread().getId());
             endBlockedCount = info.getBlockedCount();
             endWaitCount = info.getWaitedCount();
 
@@ -161,35 +159,36 @@ public class Measurement {
      * @return the number of nanoseconds elapsed between start and stop
      */
     public long getElapsedTime() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Illegal when measurement is taken.");
+        }
         return endTime - startTime;
     }
 
     /**
      * 
-     * @return the number of nanoseconds as reported by CpuTime elapsed between
-     *         start and stop
+     * @return the number of nanoseconds as reported by CpuTime elapsed between start and stop
      * @see ThreadMXBean#getCurrentThreadCpuTime()
      */
 
     public long getElapsedCpuTime() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Illegal when measurement is taken.");
+        }
 
         return this.endCpuTime - this.startCpuTime;
     }
 
     /**
      * 
-     * @return the number of nanoseconds as reported by UserTime elapsed between
-     *         start and stop
+     * @return the number of nanoseconds as reported by UserTime elapsed between start and stop
      * @see ThreadMXBean#getCurrentThreadUserTime()
      */
 
     public long getElapsedUserTime() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Illegal when measurement is taken.");
+        }
         return this.endUserTime - this.startUserTime;
     }
 
@@ -199,8 +198,9 @@ public class Measurement {
      * @see ThreadInfo#getBlockedCount()
      */
     public long getBlockCountDelta() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Illegal when measurement is taken.");
+        }
         return this.endBlockedCount - this.startBlockedCount;
     }
 
@@ -211,8 +211,9 @@ public class Measurement {
      */
 
     public long getWaitCountDelta() {
-        if (state == RunningState.STARTED)
+        if (state == RunningState.STARTED) {
             throw new IllegalStateException("Illegal when measurement is taken.");
+        }
         return this.endWaitCount - this.startWaitCount;
     }
 

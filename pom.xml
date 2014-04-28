@@ -8,10 +8,12 @@
 	<name>WebApplication profiling tools</name>
 	<url>https://github.com/dolfdijkstra/webapp-profiling.git</url>
 	<inceptionYear>2006</inceptionYear>
-	<organization>
-		<name>FatWire</name>
-		<url>http://www.fatwire.com</url>
-	</organization>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
 	<developers>
 		<developer>
 			<name>Dolf Dijkstra</name>
@@ -96,6 +98,11 @@
 			<artifactId>spring-beans</artifactId>
 			<version>2.5.5</version>
 		</dependency>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.4</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -103,15 +110,17 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
 
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -124,31 +133,23 @@
 			</plugin>
 			<plugin>
 				<inherited>true</inherited>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<version>1.10.b1</version>
-				<dependencies>
-					<dependency>
-						<groupId>com.fatwire.gst</groupId>
-						<artifactId>gsf-build-tools</artifactId>
-						<version>11.6.0</version>
-					</dependency>
-				</dependencies>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>2.6</version>
 				<configuration>
-					<header>com/fatwire/gst/foundation/license/APACHE2-HEADER.txt
-					</header>
+					<header>APACHE-2.txt</header>
+					<!-- 
 					<validHeaders>
 						<validHeader>com/fatwire/gst/foundation/license/LicenseHeader.txt
 						</validHeader>
 					</validHeaders>
+					 -->
 					<failIfMissing>true</failIfMissing>
 					<strictCheck>false</strictCheck>
 					<skipExistingHeaders>true</skipExistingHeaders>
 					<aggregate>false</aggregate>
 					<properties>
-						<year>${project.inceptionYear}</year>
-						<company>${project.organization.name}</company>
-						<company>FatWire Corporation</company>
+						<owner>Dolf Dijkstra</owner>
 					</properties>
 					<includes>
 						<include>src/**</include>
@@ -190,6 +191,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-idea-plugin</artifactId>
+				<version> 2.2.1</version>
 				<configuration>
 					<downloadSources>true</downloadSources>
 					<downloadJavadocs>true</downloadJavadocs>
@@ -215,7 +217,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<!-- version>2.7</version -->
+				<version>2.9.1</version>
 				<configuration>
 					<detectLinks>true</detectLinks>
 				</configuration>

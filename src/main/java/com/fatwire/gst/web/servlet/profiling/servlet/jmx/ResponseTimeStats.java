@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet.jmx;
 
 import java.lang.management.ManagementFactory;
@@ -48,7 +47,7 @@ public class ResponseTimeStats {
     private final String mBeanName;
     private final Log log = LogFactory.getLog(this.getClass());
     private final ResponseTimeStatistic root;
-    private NameBuilder nameBuilder = new NameBuilder();
+    private final NameBuilder nameBuilder = new NameBuilder();
     private final Rink<ResponseTimeStatistic> rink = new Rink<ResponseTimeStatistic>(1000);
 
     private final ConcurrentHashMap<String, ResponseTimeStatistic> names = new ConcurrentHashMap<String, ResponseTimeStatistic>(
@@ -57,10 +56,12 @@ public class ResponseTimeStats {
     private volatile boolean on = false;
     private volatile boolean timeFlag = false;
     private volatile boolean blockCountFlag = false;
-    private boolean jmx;
-    private ThreadLocalMeasurement measurements = new ThreadLocalMeasurement();
+    private final boolean jmx;
+    private final ThreadLocalMeasurement measurements = new ThreadLocalMeasurement();
+    private final AtomicInteger concurrency = new AtomicInteger();
 
-    public ResponseTimeStats(String name, String context, boolean jmx, boolean on, boolean timeFlag, boolean countFlag) {
+    public ResponseTimeStats(final String name, final String context, final boolean jmx, final boolean on,
+            final boolean timeFlag, final boolean countFlag) {
         this.jmx = jmx;
         this.on = on;
         this.timeFlag = timeFlag;
@@ -69,17 +70,19 @@ public class ResponseTimeStats {
         root = new ResponseTimeStatistic(context);
         try {
 
-            if (jmx)
+            if (jmx) {
                 ManagementFactory.getPlatformMBeanServer().registerMBean(root, ObjectName.getInstance(mBeanName));
-        } catch (Exception e) {
+            }
+        } catch (final Exception e) {
             log.warn(e.getMessage(), e);
         }
 
     }
 
-    private void signal(Measurement m, String name) {
-        if (!on)
+    private void signal(final Measurement m, final String name) {
+        if (!on) {
             return;
+        }
         root.signal(m);
 
         ResponseTimeStatistic stat = names.get(name);
@@ -87,7 +90,7 @@ public class ResponseTimeStats {
         if (stat == null) {
             stat = new ResponseTimeStatistic(name);
 
-            ResponseTimeStatistic old = names.putIfAbsent(name, stat);
+            final ResponseTimeStatistic old = names.putIfAbsent(name, stat);
             if (old != null) {
                 stat = old;
                 newStat = false;
@@ -99,11 +102,11 @@ public class ResponseTimeStats {
         rink.add(stat);
 
         if (newStat && jmx) {
-            String beanName = mBeanName + "," + name;
+            final String beanName = mBeanName + "," + name;
             try {
 
                 ManagementFactory.getPlatformMBeanServer().registerMBean(stat, ObjectName.getInstance(beanName));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.warn(e.getMessage() + " for " + beanName, e);
             }
 
@@ -118,53 +121,56 @@ public class ResponseTimeStats {
         return root;
     }
 
-    public void getLast(Collection<ResponseTimeStatistic> set) {
-        for (ResponseTimeStatistic s : rink) {
+    public void getLast(final Collection<ResponseTimeStatistic> set) {
+        for (final ResponseTimeStatistic s : rink) {
             set.add(s);
         }
 
     }
 
-    public void getAll(Collection<ResponseTimeStatistic> set) {
-        for (ResponseTimeStatistic s : names.values()) {
+    public void getAll(final Collection<ResponseTimeStatistic> set) {
+        for (final ResponseTimeStatistic s : names.values()) {
             set.add(s);
         }
 
     }
 
-    protected void unregister(String query) throws MalformedObjectNameException, NullPointerException {
-        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-        ObjectName name = ObjectName.getInstance(query);
-        Set<ObjectName> mbeans = server.queryNames(name, null);
-        for (ObjectName on : mbeans) {
+    protected void unregister(final String query) throws MalformedObjectNameException, NullPointerException {
+        final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        final ObjectName name = ObjectName.getInstance(query);
+        final Set<ObjectName> mbeans = server.queryNames(name, null);
+        for (final ObjectName on : mbeans) {
             try {
                 server.unregisterMBean(on);
-            } catch (Exception ee) {
+            } catch (final Exception ee) {
                 log.error(ee.getMessage(), ee);
             }
         }
 
     }
 
-    public void clean(boolean time, boolean block) {
+    public void clean(final boolean time, final boolean block) {
         checkStateChange(time, block);
 
-        boolean s = this.on;
+        final boolean s = this.on;
         this.on = false; // block signalling while the internal state is changed
         destroy();
         try {
 
-            if (jmx)
+            if (jmx) {
                 ManagementFactory.getPlatformMBeanServer().registerMBean(root, ObjectName.getInstance(mBeanName));
-        } catch (Exception e) {
+            }
+        } catch (final Exception e) {
             log.warn(e.getMessage(), e);
         }
         this.on = s;
     }
 
-    public void on(boolean time, boolean count) {
+    public void on(final boolean time, final boolean count) {
         checkStateChange(time, count);
+        concurrency.set(0);
         this.on = true;
+
     }
 
     public void off() {
@@ -172,26 +178,28 @@ public class ResponseTimeStats {
         destroy();
     }
 
-    private void checkStateChange(boolean time, boolean block) {
-        if (time != this.timeFlag || block != blockCountFlag) {
+    private void checkStateChange(final boolean time, final boolean block) {
+        if ((time != this.timeFlag) || (block != blockCountFlag)) {
             this.timeFlag = time;
             this.blockCountFlag = block;
-            int gen = generatation.incrementAndGet();
+            final int gen = generatation.incrementAndGet();
             log.info(String.format("Changing state,  increasing generation to: %d", gen));
         }
     }
 
     public void destroy() {
         try {
-            if (jmx)
+            if (jmx) {
                 unregister(mBeanName + ",*");
-        } catch (Exception ee) {
+            }
+        } catch (final Exception ee) {
             log.error(ee.getMessage(), ee);
         }
 
         this.names.clear();
         rink.reset();
         root.reset();
+        concurrency.set(0);
 
     }
 
@@ -208,35 +216,38 @@ public class ResponseTimeStats {
     }
 
     public Measurement startMeasurement() {
-        if (!on)
+        if (!on) {
             return null;
+        }
         try {
             Measurement m = measurements.get();
             if (generatation.get() != m.getGeneration()) {
                 measurements.remove();
                 m = measurements.get();
             }
-
+            concurrency.incrementAndGet();
             m.start();
             return m;
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             log.debug(e, e);
         }
         return null;
 
     }
 
-    public void finishMeasurement(HttpServletRequest request) {
-        if (!on)
+    public void finishMeasurement(final HttpServletRequest request) {
+        if (!on) {
             return;
+        }
         try {
 
-            Measurement measurement = measurements.get();
+            final Measurement measurement = measurements.get();
             if (measurement != null) {
+                concurrency.decrementAndGet();
                 try {
                     measurement.stop();
                     if (generatation.get() == measurement.getGeneration()) {
-                        String name = nameBuilder.extractName(request);
+                        final String name = nameBuilder.extractName(request);
                         signal(measurement, name);
                     }
                 } finally {
@@ -248,10 +259,17 @@ public class ResponseTimeStats {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             log.debug(e, e);
         }
 
+    }
+
+    /**
+     * @return the concurrency
+     */
+    public int getConcurrency() {
+        return concurrency.get();
     }
 
 }

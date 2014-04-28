@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,32 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet.jmx;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Assert;
-
 import junit.framework.TestCase;
+
+import org.junit.Assert;
 
 public class MeasurementTest extends TestCase {
 
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
     }
 
+    @Override
     protected void tearDown() throws Exception {
         super.tearDown();
     }
 
     public void testMeasure() throws InterruptedException {
 
-        Measurement m = new Measurement(true, true, 0);
+        final Measurement m = new Measurement(true, true, 0);
         m.start();
-        Object o = new Object();
+        final Object o = new Object();
         synchronized (o) {
             o.wait(500);
         }
@@ -47,24 +48,24 @@ public class MeasurementTest extends TestCase {
             j = j + (j * i);
         }
         m.stop();
-        long t = m.getElapsedTime();
+        final long t = m.getElapsedTime();
         System.out.printf("getElapsedTime:     %d%n", t);
-        long c = m.getElapsedCpuTime();
+        final long c = m.getElapsedCpuTime();
         System.out.printf("getElapsedCpuTime:  %d%n", c);
-        long u = m.getElapsedUserTime();
+        final long u = m.getElapsedUserTime();
         System.out.printf("getElapsedUserTime: %d%n", u);
-        long b = m.getBlockCountDelta();
+        final long b = m.getBlockCountDelta();
         System.out.printf("getBlockCountDelta: %d%n", b);
-        long w = m.getWaitCountDelta();
+        final long w = m.getWaitCountDelta();
         System.out.printf("getWaitCountDelta:  %d%n", w);
 
     }
 
     public void _testBlock() {
-        Measurement m = new Measurement(true, true, 0);
+        final Measurement m = new Measurement(true, true, 0);
         final Object o = new Object();
         final Thread current = Thread.currentThread();
-        Thread x = new Thread() {
+        final Thread x = new Thread() {
             @Override
             public void run() {
                 System.out.println("started");
@@ -89,7 +90,7 @@ public class MeasurementTest extends TestCase {
                 System.out.println("waiting");
                 o.wait();
                 System.out.println("done waiting");
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -98,7 +99,7 @@ public class MeasurementTest extends TestCase {
 
         try {
             x.join();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             e.printStackTrace();
         }
         Assert.assertEquals(0, m.getBlockCountDelta());
@@ -113,20 +114,20 @@ public class MeasurementTest extends TestCase {
             System.nanoTime();
             System.nanoTime();
         }
-        System.out.println("System.nanoTime() measurement: " + (System.nanoTime() - start) / count);
+        System.out.println("System.nanoTime() measurement: " + ((System.nanoTime() - start) / count));
         System.gc();
         start = System.nanoTime();
         for (int o = 0; o < count; o++) {
             System.currentTimeMillis();
             System.currentTimeMillis();
         }
-        System.out.println("System.currentTimeMillis() measurement: " + (System.nanoTime() - start) / count);
+        System.out.println("System.currentTimeMillis() measurement: " + ((System.nanoTime() - start) / count));
         System.gc();
         final boolean c[] = new boolean[] { true, false, true, false };
         final boolean t[] = new boolean[] { true, true, false, false };
         final AtomicInteger j = new AtomicInteger();
         for (int i = 0; i < 4; i++) {
-            Thread x = new Thread() {
+            final Thread x = new Thread() {
                 @Override
                 public void run() {
                     measurement(c[j.get()], t[j.get()], count);
@@ -137,16 +138,16 @@ public class MeasurementTest extends TestCase {
             x.start();
             try {
                 x.join();
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void measurement(boolean count, boolean time, int c) {
-        Measurement m = new Measurement(true, true, 0);
+    public void measurement(final boolean count, final boolean time, final int c) {
+        final Measurement m = new Measurement(true, true, 0);
         m.start();
-        Measurement t = new Measurement(time, count, 0);
+        final Measurement t = new Measurement(time, count, 0);
 
         for (int i = 0; i < c; i++) {
             t.start();
@@ -160,9 +161,9 @@ public class MeasurementTest extends TestCase {
     }
 
     public void testResolution() {
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         int count = 0;
-        long startTime = threadBean.getCurrentThreadCpuTime();
+        final long startTime = threadBean.getCurrentThreadCpuTime();
         long stopTime = threadBean.getCurrentThreadCpuTime();
         while (stopTime == startTime) {
             stopTime = threadBean.getCurrentThreadCpuTime();
@@ -173,9 +174,9 @@ public class MeasurementTest extends TestCase {
     }
 
     public void testResolutionUser() {
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         int count = 0;
-        long startTime = threadBean.getCurrentThreadUserTime();
+        final long startTime = threadBean.getCurrentThreadUserTime();
         long stopTime = threadBean.getCurrentThreadUserTime();
         while (stopTime == startTime) {
             stopTime = threadBean.getCurrentThreadUserTime();

@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,11 +74,11 @@ public class ThreadDumpAppender extends RollingFileAppender {
 
         int i = 0;
 
-        for (; i < stackTrace.length && i < maxFrames; i++) {
+        for (; (i < stackTrace.length) && (i < maxFrames); i++) {
             final StackTraceElement ste = stackTrace[i];
             sb.append("\tat " + ste.toString());
             sb.append('\n');
-            if (i == 0 && t.getLockInfo() != null) {
+            if ((i == 0) && (t.getLockInfo() != null)) {
                 final Thread.State ts = t.getThreadState();
                 switch (ts) {
                     case BLOCKED:

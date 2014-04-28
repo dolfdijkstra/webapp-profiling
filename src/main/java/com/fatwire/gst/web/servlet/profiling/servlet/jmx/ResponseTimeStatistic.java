@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet.jmx;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
 
     private final String name;
 
-    private final AtomicInteger counter = new AtomicInteger();
+    private final AtomicLong counter = new AtomicLong();
 
     private final AtomicLong blockCounter = new AtomicLong();
 
@@ -35,17 +34,19 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
 
     private long maxTime = 0;
 
-    private volatile BigDecimal total = BigDecimal.ZERO;
+    private volatile BigInteger total = BigInteger.ZERO;
 
-    private volatile BigDecimal systemTotal = BigDecimal.ZERO;
+    private volatile BigInteger systemTotal = BigInteger.ZERO;
 
-    public ResponseTimeStatistic(String name) {
-        if (name == null || name.length() == 0)
+    public ResponseTimeStatistic(final String name) {
+        if ((name == null) || (name.length() == 0)) {
             throw new IllegalArgumentException("name cannot be null or empty");
+        }
         this.name = name;
     }
 
-    public int getCount() {
+    @Override
+    public long getCount() {
         return counter.get();
     }
 
@@ -53,36 +54,39 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
      * total processing time in micro seconds
      * 
      */
-    public BigDecimal getTotalTime() {
+    @Override
+    public BigInteger getTotalTime() {
         return total;
     }
 
+    @Override
     public double getAverage() {
-        int n = counter.get();
-        if (n == 0)
+        final long n = counter.get();
+        if (n == 0) {
             return 0;
-        return (total.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP).doubleValue());
+        }
+        return (new BigDecimal(total).divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP).doubleValue());
 
     }
 
-    void signal(Measurement m) {
+    public void signal(final Measurement m) {
         counter.incrementAndGet();
         this.blockCounter.addAndGet(m.getBlockCountDelta());
         this.waitCounter.addAndGet(m.getWaitCountDelta());
 
         if (m.getElapsedUserTime() > 0) {
-            long user = m.getElapsedUserTime();
-            long cpu = m.getElapsedCpuTime();
-            long system = cpu - user;
+            final long user = m.getElapsedUserTime();
+            final long cpu = m.getElapsedCpuTime();
+            final long system = cpu - user;
             if (system > 0) {
-                this.systemTotal = this.systemTotal.add(BigDecimal.valueOf(system));
+                this.systemTotal = this.systemTotal.add(BigInteger.valueOf(system));
             }
 
         }
 
-        long t = m.getElapsedTime() / 1000;
+        final long t = m.getElapsedTime() / 1000;
 
-        total = total.add(BigDecimal.valueOf(t));
+        total = total.add(BigInteger.valueOf(t));
         minTime = Math.min(minTime, t);
         maxTime = Math.max(maxTime, t);
 
@@ -91,6 +95,7 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
     /**
      * @return the minTime
      */
+    @Override
     public long getMinTime() {
 
         return getCount() == 0 ? 0 : minTime;
@@ -99,19 +104,23 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
     /**
      * @return the maxTime
      */
+    @Override
     public long getMaxTime() {
         return getCount() == 0 ? 0 : maxTime;
     }
 
+    @Override
     public long getBlockCount() {
         return this.blockCounter.get();
     }
 
+    @Override
     public long getWaitCount() {
         return this.waitCounter.get();
     }
 
-    public BigDecimal getTotalSystemTime() {
+    @Override
+    public BigInteger getTotalSystemTime() {
         return this.systemTotal;
     }
 
@@ -126,7 +135,7 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = (prime * result) + ((name == null) ? 0 : name.hashCode());
         return result;
     }
 
@@ -134,7 +143,7 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
@@ -144,7 +153,7 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        ResponseTimeStatistic other = (ResponseTimeStatistic) obj;
+        final ResponseTimeStatistic other = (ResponseTimeStatistic) obj;
         if (name == null) {
             if (other.name != null) {
                 return false;
@@ -166,11 +175,10 @@ public class ResponseTimeStatistic implements ResponseTimeStatisticMBean {
 
         maxTime = 0;
 
-        total = BigDecimal.ZERO;
+        total = BigInteger.ZERO;
 
-        systemTotal = BigDecimal.ZERO;
+        systemTotal = BigInteger.ZERO;
 
-        
     }
 
 }

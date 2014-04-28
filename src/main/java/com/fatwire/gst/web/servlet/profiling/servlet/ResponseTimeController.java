@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import javax.management.Attribute;
+import javax.management.AttributeList;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,6 +36,9 @@ import org.apache.commons.logging.LogFactory;
 import com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeRequestListener;
 import com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeStatistic;
 import com.fatwire.gst.web.servlet.profiling.servlet.jmx.ResponseTimeStats;
+import com.fatwire.gst.web.servlet.profiling.servlet.view.CounterHtmlView;
+import com.fatwire.gst.web.servlet.profiling.servlet.view.CounterJsonView;
+import com.fatwire.gst.web.servlet.profiling.servlet.view.CounterTextView;
 
 public class ResponseTimeController {
 
@@ -44,9 +46,9 @@ public class ResponseTimeController {
 
     private static final String ON = "on";
 
-    private static final String BLOCK2 = "block";
+    private static final String BLOCK = "block";
 
-    private static final String TIME2 = "time";
+    private static final String TIME = "time";
 
     private static final String TURN_OFF = "Turn off";
 
@@ -54,34 +56,55 @@ public class ResponseTimeController {
 
     private static final String RESET = "Reset";
 
-    private final Log log = LogFactory.getLog(getClass());
+    final Log log = LogFactory.getLog(getClass());
 
     private final ServletContext context;
+
+    private final View selfRedirectView = new SelfRedirectView();
+
+    private final Timer timer = new Timer("Requests Performance Collector", true);
+
+    final CounterHistory counterHistory = new CounterHistory(15 * 60);
+    final CounterHistoryBigInteger timeHistory = new CounterHistoryBigInteger(15 * 60);
 
     public ResponseTimeController(final ServletContext context) {
         super();
         this.context = context;
+        final TimerTask counterTask = new TimerTask() {
+
+            @Override
+            public void run() {
+                final ResponseTimeStats stats = ResponseTimeRequestListener.getResponseTimeStatistic(context);
+                if (stats.isOn()) {
+                    counterHistory.add(stats.getRoot().getCount());
+                    timeHistory.add(stats.getRoot().getTotalTime());
+                }
+
+            }
+
+        };
+        timer.scheduleAtFixedRate(counterTask, 1000, 1000);
     }
 
-    @SuppressWarnings("unchecked")
+    void shutdown() {
+        timer.cancel();
+    }
+
     public View handleRequest(final HttpServletRequest request, final HttpServletResponse resp) throws Exception {
 
         final String pi = request.getPathInfo();
-        log.debug(pi);
-        Set<Entry<String, String[]>> s = request.getParameterMap().entrySet();
-
-        for (Entry<String, String[]> e : s) {
-            log.debug(e.getKey() + ": " + Arrays.asList(e.getValue()));
-        }
         if ("/configure".equals(pi)) {
             return handleConfigure(request, resp);
+        } else if ("/counter".equals(pi)) {
+            return handleCounter(request, resp);
         }
+
         return handleRoot(request);
 
     }
 
     private View handleRoot(final HttpServletRequest request) {
-        final ResponseTimeStats stats = ResponseTimeRequestListener.getResponseTimeStatistic(context);
+        final ResponseTimeStats stats = getResponseTimeStats();
         final ResponseTimeStatistic root = stats.getRoot();
 
         final LinkedHashSet<ResponseTimeStatistic> set = new LinkedHashSet<ResponseTimeStatistic>();
@@ -94,37 +117,63 @@ public class ResponseTimeController {
         return new StatsView(set, root, stats.isOn());
     }
 
-    private View handleConfigure(final HttpServletRequest request, final HttpServletResponse resp) {
-        if(request.getSession(false) ==null){
-            request.getSession(true);
-            return new View() {
+    private ResponseTimeStats getResponseTimeStats() {
+        return ResponseTimeRequestListener.getResponseTimeStatistic(context);
+    }
 
-                @Override
-                public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
-                    response.sendRedirect(request.getRequestURL().toString() );
-                }
-
-            };
+    private View handleCounter(final HttpServletRequest request, final HttpServletResponse resp) {
+        final ResponseTimeStats stats = getResponseTimeStats();
+        String accept = request.getHeader("Accept");
+        if ("json".equalsIgnoreCase(request.getParameter("format"))
+                || (accept != null && accept.contains("application/json"))) {
+            return new CounterJsonView(stats.getRoot(), stats.isOn(), stats.getConcurrency(), this.counterHistory,
+                    this.timeHistory);
         }
-        final ResponseTimeStats stats = ResponseTimeRequestListener.getResponseTimeStatistic(context);
+        if ("text".equalsIgnoreCase(request.getParameter("format"))
+                || (accept != null && accept.contains("text/plain"))) {
+            return new CounterTextView(stats.getRoot(), stats.isOn(), stats.getConcurrency(), this.counterHistory,
+                    this.timeHistory);
+        }
+
+        return new CounterHtmlView(stats.getRoot(), stats.isOn(), stats.getConcurrency(), this.counterHistory,
+                this.timeHistory);
+
+    }
+
+    private View handleConfigure(final HttpServletRequest request, final HttpServletResponse resp) {
+        if (request.getSession(false) == null) {
+            request.getSession(true);
+            return selfRedirectView;
+        }
+        final ResponseTimeStats stats = getResponseTimeStats();
         if ("POST".equalsIgnoreCase(request.getMethod()) && checkValidSubmit(request)) {
-            final boolean time = Boolean.parseBoolean(request.getParameter(TIME2));
-            final boolean block = Boolean.parseBoolean(request.getParameter(BLOCK2));
+            final boolean time = Boolean.parseBoolean(request.getParameter(TIME));
+            final boolean block = Boolean.parseBoolean(request.getParameter(BLOCK));
 
             if (RESET.equals(request.getParameter(RESET2))) {
                 log.debug(String.format("Reset(%s,%s)", time, block));
-                stats.clean(time, block);
+                if (stats.isOn()) {
+                    stats.clean(time, block);
+                    return new RedirectToStatsView();
+                }
             } else if (TURN_ON.equals(request.getParameter(ON))) {
                 log.debug(String.format("Turn On(%s,%s)", time, block));
-                stats.on(time, block);
+                if (!stats.isOn()) {
+                    stats.on(time, block);
+                    return new RedirectToStatsView();
+                }
             } else if (TURN_OFF.equals(request.getParameter(ON))) {
                 log.debug("Turning stats off");
-                stats.off();
+                if (stats.isOn()) {
+                    stats.off();
+                    return new RedirectToStatsView();
+                }
             } else {
                 return new View() {
 
                     @Override
-                    public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+                    public void render(final HttpServletRequest request, final HttpServletResponse response)
+                            throws IOException {
                         response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                     }
 
@@ -135,8 +184,22 @@ public class ResponseTimeController {
         return new ConfigView(stats);
     }
 
-    private boolean checkValidSubmit(HttpServletRequest request) {
-        return request.getParameter(RESET2) != null || request.getParameter(ON) != null;
+    private boolean checkValidSubmit(final HttpServletRequest request) {
+        return (request.getParameter(RESET2) != null) || (request.getParameter(ON) != null);
+    }
+
+    private final class SelfRedirectView implements View {
+        @Override
+        public void render(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+            response.sendRedirect(request.getRequestURL().toString());
+        }
+    }
+
+    private final class RedirectToStatsView implements View {
+        @Override
+        public void render(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+            response.sendRedirect(request.getRequestURI().replaceAll("/configure", ""));
+        }
     }
 
     private final class ConfigView implements View {
@@ -166,13 +229,12 @@ public class ResponseTimeController {
                     + request.getLocalName() + context.getContextPath() + "</h1>");
             writer.print("<p><a href=\"../perf\">Statistics</a></p>");
 
-            HttpSession session = request.getSession();
+            final HttpSession session = request.getSession();
             //
             writer.print("<form method='POST'>");
-            if (session != null && session.getAttribute(_AUTHKEY) != null) {
+            if ((session != null) && (session.getAttribute(_AUTHKEY) != null)) {
                 writer.print("<input type=\"hidden\" name=\"" + _AUTHKEY + "\" value=\""
                         + session.getAttribute(_AUTHKEY) + "\" />");
-                writer.print("<input type=\"hidden\" name=\"pagename\" value=\"fatwire/wem/sso/ssoLogin\"/>");
             }
 
             writer.print("<input type=\"checkbox\" name=\"time\" value=\"true\""
@@ -188,21 +250,19 @@ public class ResponseTimeController {
                 writer.print("<input type=\"submit\" name=\"on\" value=\"" + TURN_ON + "\">");
             }
             writer.print("</form>");
-            // } else {
-            // writer.print("Login to Sites to change the configuration");
-            // }
-            writer.write("</body></html>");
+            writer.print("</body></html>");
         }
     }
 
     private final class StatsView implements View {
         private final LinkedHashSet<ResponseTimeStatistic> set;
         private final ResponseTimeStatistic root;
-        // NumberFormat nf = NumberFormat.getNumberInstance();
+        // NumberFormat decimalFormat = NumberFormat.getNumberInstance();
         NumberFormat nf = new DecimalFormat("#,##0");
         private final boolean on;
 
-        private StatsView(final LinkedHashSet<ResponseTimeStatistic> set, final ResponseTimeStatistic root, boolean on) {
+        private StatsView(final LinkedHashSet<ResponseTimeStatistic> set, final ResponseTimeStatistic root,
+                final boolean on) {
             this.set = set;
             this.root = root;
             this.on = on;
@@ -215,74 +275,92 @@ public class ResponseTimeController {
 
             final PrintWriter writer = response.getWriter();
             writer.println("<!DOCTYPE html>");
-            writer.println("<html><head><title>Performance Statistics for " + context.getServerInfo() + " at "
+            writer.print("<html><head><title>Performance Statistics for " + context.getServerInfo() + " at "
                     + request.getLocalName() + context.getContextPath() + "</title>");
-            writer.println("<style type=\"text/css\">");
-            writer.println("td,th,body { font-size: small; font-family: monospace; }");
-            writer.println("td {text-align:right}");
-            writer.println("td.name {text-align:left}");
-            writer.println("</style>");
+            writer.print("<style type=\"text/css\">");
+            writer.print("td,th,body { font-size: small; font-family: monospace; }");
+            writer.print("td {text-align:right}");
+            writer.print("td.name {text-align:left}");
+            writer.print("</style>");
             writer.println("</head><body>");
             writer.print("<h1>Performance Statistics for " + context.getServerInfo() + " at " + request.getLocalName()
                     + context.getContextPath() + "</h1>");
-            writer.print("<p><a href=\"perf/configure\">Configuration</a></p>");
+
+            writer.print("<p><a href=\"" + request.getRequestURI() + "/configure\">Configuration</a>");
+            if (on) {
+                writer.print(" <a href=\"" + request.getRequestURI() + "/counter?interval=2\">Counters</a></p>");
+            }
+            writer.print("</p>");
+
             if (!on) {
-                writer.write("<h3>Gathering of statistics is turned off</h3>");
+                writer.print("<h3>Gathering of statistics is turned off</h3>");
             } else {
-                writer.write("<table><thead>");
-                writer.write("<tr>");
-                writer.write("<td class=\"name\">name</td><td>count</td><td>average (μs)</td><td>min (μs)</td><td>max (μs)</td><td>total-system (μs)</td><td>total (μs)</td><td>block</td><td>wait</td>");
-                writer.write("</tr>");
-                writer.write("</thead><tbody>");
+                writer.print("<table><thead>");
+                writer.print("<tr>");
+                writer.print("<td class=\"name\">name</td><td>count</td><td>average (μs)</td><td>min (μs)</td><td>max (μs)</td><td>total-system (μs)</td><td>total (μs)</td><td>block</td><td>wait</td>");
+                writer.print("</tr>");
+                writer.print("</thead><tbody>");
                 write(writer, root);
 
                 for (final ResponseTimeStatistic stat : set) {
                     write(writer, stat);
 
                 }
-                writer.write("</tbody>");
-                writer.write("</table>");
+                writer.print("</tbody>");
+                writer.print("</table>");
             }
-            writer.write("</body></html>");
+            writer.println("</body></html>");
         }
 
-        protected void write(final Writer writer, final ResponseTimeStatistic stat) throws IOException {
-            writer.write("<tr>");
-            writer.write("<td class=\"name\">");
-            writer.write(stat.getName());
-            writer.write("</td>");
+        protected void write(final PrintWriter writer, final ResponseTimeStatistic stat) throws IOException {
+            writer.print("<tr>");
+            writer.print("<td class=\"name\">");
+            writer.print(stat.getName());
+            writer.print("</td>");
 
-            writer.write("<td  class=\"count\">");
-            writer.write(Integer.toString(stat.getCount()));
-            writer.write("</td>");
+            writer.print("<td  class=\"count\">");
+            writer.print(Long.toString(stat.getCount()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"avg\">");
-            writer.write(nf.format(stat.getAverage()));
-            writer.write("</td>");
+            writer.print("<td class=\"avg\">");
+            writer.print(nf.format(stat.getAverage()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"min\">");
-            writer.write(nf.format(stat.getMinTime()));
-            writer.write("</td>");
+            writer.print("<td class=\"min\">");
+            writer.print(nf.format(stat.getMinTime()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"max\">");
-            writer.write(nf.format(stat.getMaxTime()));
-            writer.write("</td>");
+            writer.print("<td class=\"max\">");
+            writer.print(nf.format(stat.getMaxTime()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"total-system\">");
-            writer.write(nf.format(stat.getTotalSystemTime()));
-            writer.write("</td>");
+            writer.print("<td class=\"total-system\">");
+            writer.print(nf.format(stat.getTotalSystemTime()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"total\">");
-            writer.write(nf.format(stat.getTotalTime()));
-            writer.write("</td>");
+            writer.print("<td class=\"total\">");
+            writer.print(nf.format(stat.getTotalTime()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"block\">");
-            writer.write(nf.format(stat.getBlockCount()));
-            writer.write("</td>");
+            writer.print("<td class=\"block\">");
+            writer.print(nf.format(stat.getBlockCount()));
+            writer.print("</td>");
 
-            writer.write("<td class=\"wait\">");
-            writer.write(nf.format(stat.getWaitCount()));
-            writer.write("</tr>");
+            writer.print("<td class=\"wait\">");
+            writer.print(nf.format(stat.getWaitCount()));
+            writer.print("</tr>");
         }
     }
+
+    private AttributeListFilter stageSevenFilter = new AttributeListFilter() {
+        public boolean filter(AttributeList attributes) {
+            for (Attribute a : attributes.asList()) {
+                if ("stage".equals(a.getName())) {
+                    return !"7".equals(String.valueOf(a.getValue()));
+                }
+
+            }
+            return true;
+        }
+    };
 }

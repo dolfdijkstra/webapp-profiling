@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.support;
 
 import java.util.LinkedList;
@@ -27,19 +26,21 @@ public class DefaultInstrumentation implements Instrumentation {
 
     private final List<Measurement> measurements = new LinkedList<Measurement>();
 
+    @Override
     public Measurement[] getMeasurements() {
-        Measurement[] m = measurements.toArray(new Measurement[measurements
-                .size()]);
+        final Measurement[] m = measurements.toArray(new Measurement[measurements.size()]);
         measurements.clear();
         return m;
     }
 
+    @Override
     public Measurement start(final String key) {
 
         return new MeasurementImpl(key);
     }
 
-    public Measurement start(Hierarchy name) {
+    @Override
+    public Measurement start(final Hierarchy name) {
         return new MeasurementImpl(name);
     }
 

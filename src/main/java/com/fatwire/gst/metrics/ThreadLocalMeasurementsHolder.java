@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.fatwire.gst.web.servlet.profiling.servlet;
+package com.fatwire.gst.metrics;
 
-import java.io.IOException;
+public class ThreadLocalMeasurementsHolder {
+    private ThreadLocalMeasurementsHolder() {
+    }
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+    private static final ThreadLocal<Measurements> tl = new ThreadLocal<Measurements>();
 
-public interface View {
+    public static Measurements get() {
+        return tl.get();
 
-    public void render(final HttpServletRequest request, final HttpServletResponse response) throws IOException;
+    }
+
+    public static void set(final Measurements metrics) {
+        if (metrics != null && tl.get() != null)
+            throw new IllegalStateException("The threadlocal object for the measurements is holding a value.");
+        tl.set(metrics);
+
+    }
 
 }

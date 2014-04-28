@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,23 +30,23 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 
-import com.fatwire.gst.metrics.MetricListener;
-import com.fatwire.gst.metrics.Metrics;
+import com.fatwire.gst.metrics.MeasurementListener;
+import com.fatwire.gst.metrics.Measurements;
 import com.fatwire.gst.metrics.SwitchesManager;
-import com.fatwire.gst.metrics.ThreadLocalMetricsHolder;
+import com.fatwire.gst.metrics.ThreadLocalMeasurementsHolder;
 import com.fatwire.gst.metrics.sites.SitesTimeDebugMetricsProvider;
 
-public class MetricsServletListener implements ServletRequestListener, ServletContextListener {
-    private Log log = LogFactory.getLog(MetricsServletListener.class);
+public class MeasurementsServletListener implements ServletRequestListener, ServletContextListener {
+    private Log log = LogFactory.getLog(MeasurementsServletListener.class);
     private XmlBeanFactory beanFactory;
-    private Map<String, MetricListener> listeners;
+    private Map<String, MeasurementListener> listeners;
     private Map<String, SitesTimeDebugMetricsProvider> providers;
-    private Metrics metrics = new Metrics();
+    private Measurements metrics = new Measurements();
 
     @Override
     public void requestInitialized(ServletRequestEvent sre) {
         try {
-            ThreadLocalMetricsHolder.set(metrics);
+            ThreadLocalMeasurementsHolder.set(metrics);
             if (metrics.isActive()) {
 
                 HttpServletRequest request = (HttpServletRequest) sre.getServletRequest();
@@ -55,7 +55,8 @@ public class MetricsServletListener implements ServletRequestListener, ServletCo
                 if (qs == null) {
                     metrics.start("request", request.getMethod() + " " + request.getRequestURL().toString());
                 } else {
-                    metrics.start("request", request.getMethod() + " " + request.getRequestURL().append("?").append(qs).toString());
+                    metrics.start("request", request.getMethod() + " "
+                            + request.getRequestURL().append("?").append(qs).toString());
                 }
             }
         } catch (Exception e) {
@@ -70,7 +71,7 @@ public class MetricsServletListener implements ServletRequestListener, ServletCo
             if (metrics.isActive()) {
                 metrics.terminate();
             }
-            ThreadLocalMetricsHolder.set(null);
+            ThreadLocalMeasurementsHolder.set(null);
         } catch (Exception e) {
             log.warn(e, e);
         }
@@ -82,11 +83,11 @@ public class MetricsServletListener implements ServletRequestListener, ServletCo
     public void contextInitialized(ServletContextEvent sce) {
         try {
             beanFactory = new XmlBeanFactory(new ClassPathResource("metrics-listener.xml"));
-            listeners = beanFactory.getBeansOfType(MetricListener.class);
+            listeners = beanFactory.getBeansOfType(MeasurementListener.class);
 
-            for (Map.Entry<String, MetricListener> e : listeners.entrySet()) {
-                MetricListener listener = e.getValue();
-                log.info("adding listener to Metrics: " + listener.getClass().getName() + ", active: "
+            for (Map.Entry<String, MeasurementListener> e : listeners.entrySet()) {
+                MeasurementListener listener = e.getValue();
+                log.info("adding listener to Measurements: " + listener.getClass().getName() + ", active: "
                         + metrics.isActive());
                 metrics.addListener(listener);
             }
@@ -106,8 +107,8 @@ public class MetricsServletListener implements ServletRequestListener, ServletCo
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         try {
-            for (Map.Entry<String, MetricListener> e : listeners.entrySet()) {
-                MetricListener listener = e.getValue();
+            for (Map.Entry<String, MeasurementListener> e : listeners.entrySet()) {
+                MeasurementListener listener = e.getValue();
                 metrics.removeListener(listener);
                 if (listener instanceof Closeable) {
                     try {

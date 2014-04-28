@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.support;
 
 import com.fatwire.gst.web.servlet.profiling.Hierarchy;
@@ -34,11 +33,11 @@ public final class MeasurementImpl implements Measurement {
 
     boolean running = true;
 
-    MeasurementImpl(String key) {
+    MeasurementImpl(final String key) {
         this(new Hierarchy(key));
     }
 
-    public MeasurementImpl(Hierarchy name) {
+    public MeasurementImpl(final Hierarchy name) {
         this.key = name;
         startNanoTime = System.nanoTime();
 
@@ -49,15 +48,18 @@ public final class MeasurementImpl implements Measurement {
     /* (non-Javadoc)
      * @see com.fatwire.gst.web.servlet.profiling.Measurement#elapsed()
      */
+    @Override
     public long elapsed() {
-        if (running)
+        if (running) {
             return System.nanoTime() - startNanoTime;
+        }
         return endTime - startNanoTime;
     }
 
     /* (non-Javadoc)
      * @see com.fatwire.gst.web.servlet.profiling.Measurement#stop()
      */
+    @Override
     public void stop() {
         endTime = System.nanoTime();
         running = false;
@@ -67,6 +69,7 @@ public final class MeasurementImpl implements Measurement {
     /* (non-Javadoc)
      * @see com.fatwire.gst.web.servlet.profiling.Measurement#getName()
      */
+    @Override
     public Hierarchy getName() {
         return key;
     }
@@ -74,6 +77,7 @@ public final class MeasurementImpl implements Measurement {
     /* (non-Javadoc)
      * @see com.fatwire.gst.web.servlet.profiling.Measurement#getStartTime()
      */
+    @Override
     public long getStartTime() {
         return startTime;
     }

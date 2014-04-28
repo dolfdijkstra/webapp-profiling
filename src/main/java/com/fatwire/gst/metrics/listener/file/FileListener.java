@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,11 +27,11 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import com.fatwire.gst.metrics.Measurement;
-import com.fatwire.gst.metrics.Metric;
-import com.fatwire.gst.metrics.MetricListener;
+import com.fatwire.gst.metrics.StartEndMeasurement;
+import com.fatwire.gst.metrics.MeasurementListener;
 import com.fatwire.gst.metrics.Switches;
 
-public class FileListener implements MetricListener, Closeable {
+public class FileListener implements MeasurementListener, Closeable {
     private static final String NAME = FileListener.class.getName();
     private final TimeUnit precision = TimeUnit.MICROSECONDS;
     private static final String precisionString = " μs";
@@ -45,7 +45,7 @@ public class FileListener implements MetricListener, Closeable {
     }
 
     @Override
-    public void start(final Metric metric) {
+    public void start(final StartEndMeasurement metric) {
         if (Switches.state(NAME)) {
             final StringBuilder b = new StringBuilder(256);
             b.append(formatDate(new Date()));
@@ -60,7 +60,7 @@ public class FileListener implements MetricListener, Closeable {
             b.append("\t");
             b.append(convert(metric.getStart() - metric.getLevelZeroStart()));
             b.append("\t");
-            b.append(metric.msg());
+            b.append(metric.getMsg());
             write(b.toString());
         }
     }
@@ -84,7 +84,7 @@ public class FileListener implements MetricListener, Closeable {
     };
 
     @Override
-    public void stop(final Metric metric) {
+    public void stop(final StartEndMeasurement metric) {
         if (Switches.state(NAME)) {
             final StringBuilder b = new StringBuilder(256);
             b.append(formatDate(new Date()));
@@ -96,11 +96,11 @@ public class FileListener implements MetricListener, Closeable {
             b.append("\t");
             b.append(metric.getLevel());
             b.append("\t");
-            b.append(convert((metric.getStart() + metric.elapsed()) - metric.getLevelZeroStart()));
+            b.append(convert((metric.getStart() + metric.getElapsed()) - metric.getLevelZeroStart()));
             b.append("\t");
-            b.append(metric.msg());
+            b.append(metric.getMsg());
             b.append("\t");
-            b.append(convert(metric.elapsed()));
+            b.append(convert(metric.getElapsed()));
             b.append("\t");
             b.append(precisionString);
             write(b.toString());
@@ -128,9 +128,9 @@ public class FileListener implements MetricListener, Closeable {
             b.append("\t");
             b.append(convert(me.getEnd() - me.getLevelZeroStart()));
             b.append("\t");
-            b.append(me.msg());
+            b.append(me.getMsg());
             b.append("\t");
-            b.append(convert(me.elapsed()));
+            b.append(convert(me.getElapsed()));
             b.append("\t");
             b.append(precisionString);
             write(b.toString());

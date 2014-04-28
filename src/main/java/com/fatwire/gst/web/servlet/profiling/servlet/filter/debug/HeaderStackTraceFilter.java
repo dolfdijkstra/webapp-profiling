@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,36 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet.filter.debug;
 
 import java.io.IOException;
 
 import javax.servlet.Filter;
-
 import javax.servlet.FilterChain;
-
 import javax.servlet.FilterConfig;
-
 import javax.servlet.ServletException;
-
 import javax.servlet.ServletRequest;
-
 import javax.servlet.ServletResponse;
-
 import javax.servlet.http.Cookie;
-
 import javax.servlet.http.HttpServletResponse;
-
 import javax.servlet.http.HttpServletResponseWrapper;
 
 import org.apache.commons.logging.Log;
-
 import org.apache.commons.logging.LogFactory;
 
 /**
  * 
  * prints a stack trace to the log file each time the servlet sets a response header or a cookie
+ * 
  * @author Dolf.Dijkstra
  * @since Jun 27, 2009
  */
@@ -51,15 +42,17 @@ public class HeaderStackTraceFilter implements Filter {
 
     private static Log log = LogFactory.getLog(HeaderStackTraceFilter.class);
 
+    @Override
     public void destroy() {
 
         // TODO Auto-generated method stub
 
     }
 
-    public void doFilter(ServletRequest request, ServletResponse response,
+    @Override
+    public void doFilter(final ServletRequest request, final ServletResponse response,
 
-    FilterChain chain) throws IOException, ServletException {
+    final FilterChain chain) throws IOException, ServletException {
 
         if (response instanceof HttpServletResponse) {
 
@@ -74,7 +67,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void addCookie(Cookie cookie) {
+                public void addCookie(final Cookie cookie) {
 
                     log.debug(cookie == null ? "null cookie" : cookie.getName()
 
@@ -91,7 +84,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void addDateHeader(String name, long date) {
+                public void addDateHeader(final String name, final long date) {
 
                     log.debug(name + "=" + date, new Exception());
 
@@ -106,7 +99,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void addHeader(String name, String value) {
+                public void addHeader(final String name, final String value) {
 
                     log.debug(name + "=" + value, new Exception());
 
@@ -121,7 +114,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void addIntHeader(String name, int value) {
+                public void addIntHeader(final String name, final int value) {
 
                     log.debug(name + "=" + value, new Exception());
 
@@ -136,7 +129,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void setDateHeader(String name, long date) {
+                public void setDateHeader(final String name, final long date) {
 
                     log.debug(name + "=" + date, new Exception());
 
@@ -151,7 +144,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void setHeader(String name, String value) {
+                public void setHeader(final String name, final String value) {
 
                     log.debug(name + "=" + value, new Exception());
 
@@ -166,7 +159,7 @@ public class HeaderStackTraceFilter implements Filter {
                  */
 
                 @Override
-                public void setIntHeader(String name, int value) {
+                public void setIntHeader(final String name, final int value) {
 
                     log.debug(name + "=" + value, new Exception());
 
@@ -184,7 +177,8 @@ public class HeaderStackTraceFilter implements Filter {
 
     }
 
-    public void init(FilterConfig filterConfig) throws ServletException {
+    @Override
+    public void init(final FilterConfig filterConfig) throws ServletException {
 
         // TODO Auto-generated method stub
 

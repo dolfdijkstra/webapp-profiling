@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * 
  */
@@ -25,9 +24,10 @@ class StatComparator implements Comparator<Stat> {
 
     static String[] t = new String[] { "select", "update", "insert", "delete" };
 
-    public int compare(Stat m, Stat f) {
-        int c1 = code(m);
-        int c2 = code(f);
+    @Override
+    public int compare(final Stat m, final Stat f) {
+        final int c1 = code(m);
+        final int c2 = code(f);
         if (c1 < 6) {
             return c1 - c2;
         }
@@ -37,17 +37,19 @@ class StatComparator implements Comparator<Stat> {
         if (c1 != c2) {
             return c1 - c2;
         }
-        if (m.getSubType() == null)
+        if (m.getSubType() == null) {
             return -1;
-        if (f.getSubType() == null)
+        }
+        if (f.getSubType() == null) {
             return 1;
-        //by now we are sql with unknown subtype, or element
+            // by now we are sql with unknown subtype, or element
+        }
 
         return m.getSubType().compareTo(f.getSubType());
 
     }
 
-    private int code(Stat m) {
+    private int code(final Stat m) {
         if ("page".equals(m.getType())) {
             return 1;
         } else if ("sql".equals(m.getType())) {

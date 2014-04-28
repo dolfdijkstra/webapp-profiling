@@ -1,11 +1,11 @@
 /*
- * Copyright 2014 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.servlet.filter.debug;
 
 import java.io.IOException;
@@ -42,13 +41,15 @@ public class SetStatusDebugFilter implements Filter {
 
     private static Log log = LogFactory.getLog(SetStatusDebugFilter.class);
 
+    @Override
     public void destroy() {
 
     }
 
-    public void doFilter(ServletRequest request, ServletResponse response,
+    @Override
+    public void doFilter(final ServletRequest request, final ServletResponse response,
 
-    FilterChain chain) throws IOException, ServletException {
+    final FilterChain chain) throws IOException, ServletException {
 
         if (response instanceof HttpServletResponse) {
 
@@ -60,7 +61,7 @@ public class SetStatusDebugFilter implements Filter {
                  * @see javax.servlet.http.HttpServletResponseWrapper#sendError(int, java.lang.String)
                  */
                 @Override
-                public void sendError(int sc, String msg) throws IOException {
+                public void sendError(final int sc, final String msg) throws IOException {
                     log.info("sendError", new Exception());
                     super.sendError(sc, msg);
                 }
@@ -69,7 +70,7 @@ public class SetStatusDebugFilter implements Filter {
                  * @see javax.servlet.http.HttpServletResponseWrapper#sendError(int)
                  */
                 @Override
-                public void sendError(int sc) throws IOException {
+                public void sendError(final int sc) throws IOException {
                     log.info("sendError", new Exception());
                     super.sendError(sc);
                 }
@@ -78,7 +79,7 @@ public class SetStatusDebugFilter implements Filter {
                  * @see javax.servlet.http.HttpServletResponseWrapper#setStatus(int)
                  */
                 @Override
-                public void setStatus(int sc) {
+                public void setStatus(final int sc) {
                     log.info("setStatus", new Exception());
                     super.setStatus(sc);
                 }
@@ -87,7 +88,7 @@ public class SetStatusDebugFilter implements Filter {
                  * @see javax.servlet.http.HttpServletResponseWrapper#setStatus(int, java.lang.String)
                  */
                 @Override
-                public void setStatus(int sc, String sm) {
+                public void setStatus(final int sc, final String sm) {
                     log.info("setStatus", new Exception());
                     super.setStatus(sc, sm);
                 }
@@ -102,7 +103,8 @@ public class SetStatusDebugFilter implements Filter {
 
     }
 
-    public void init(FilterConfig filterConfig) throws ServletException {
+    @Override
+    public void init(final FilterConfig filterConfig) throws ServletException {
 
     }
 

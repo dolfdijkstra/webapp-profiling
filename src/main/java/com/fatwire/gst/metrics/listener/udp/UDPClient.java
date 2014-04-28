@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 Dolf Dijkstra. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.fatwire.gst.metrics.Measurement;
-import com.fatwire.gst.metrics.Metric;
+import com.fatwire.gst.metrics.StartEndMeasurement;
 
 public class UDPClient {
 
@@ -77,9 +77,9 @@ public class UDPClient {
         }
     }
 
-    public void sendStart(final Metric metric) throws IOException {
+    public void sendStart(final StartEndMeasurement metric) throws IOException {
         if (LOG.isTraceEnabled()) {
-            LOG.trace(String.format("start %d %d %s", metric.getId(), metric.getLevel(), metric.msg()));
+            LOG.trace(String.format("start %d %d %s", metric.getId(), metric.getLevel(), metric.getMsg()));
         }
 
         final byte[] b = protocol.toStartByte(metric);
@@ -88,17 +88,17 @@ public class UDPClient {
 
     public void sendEvent(final Measurement m) throws IOException {
         if (LOG.isTraceEnabled()) {
-            LOG.trace(String.format("event %d %d %d %s", m.getId(), m.getLevel(), m.elapsed(), m.msg()));
+            LOG.trace(String.format("event %d %d %d %s", m.getId(), m.getLevel(), m.getElapsed(), m.getMsg()));
         }
 
         final byte[] b = protocol.toEventByte(m);
         send(b);
     }
 
-    public void sendEnd(final Metric metric) throws IOException {
+    public void sendEnd(final StartEndMeasurement metric) throws IOException {
         if (LOG.isTraceEnabled()) {
-            LOG.trace(String.format("end %d %d %d %s", metric.getId(), metric.getLevel(), metric.elapsed(),
-                    metric.msg()));
+            LOG.trace(String.format("end %d %d %d %s", metric.getId(), metric.getLevel(), metric.getElapsed(),
+                    metric.getMsg()));
         }
         final byte[] b = protocol.toEndByte(metric);
         send(b);

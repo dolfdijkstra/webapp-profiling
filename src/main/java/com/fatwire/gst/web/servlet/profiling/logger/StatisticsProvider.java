@@ -1,11 +1,11 @@
 /*
- * Copyright 2006 FatWire Corporation. All Rights Reserved.
+ * Copyright (C) 2006 Dolf Dijkstra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.fatwire.gst.web.servlet.profiling.logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,23 +30,24 @@ public class StatisticsProvider implements ParserCallback, StatisticsProviderMBe
 
     public static String NAME = "com.fatwire.gst.web.servlet:type=StatisticsProvider";
 
-    private ConcurrentHashMap<String, Stat> stats = new ConcurrentHashMap<String, Stat>(200, 0.75f, 2); // append
-                                                                                                        // is
-                                                                                                        // called
-                                                                                                        // from
-                                                                                                        // asynchronized
-                                                                                                        // method
+    private final ConcurrentHashMap<String, Stat> stats = new ConcurrentHashMap<String, Stat>(200, 0.75f, 2); // append
+    // is
+    // called
+    // from
+    // asynchronized
+    // method
 
     private MBeanServer server;
 
     /**
      * @param server
      */
-    public StatisticsProvider(MBeanServer server) {
+    public StatisticsProvider(final MBeanServer server) {
         super();
         this.server = server;
     }
 
+    @Override
     public Stat[] getStats() {
         synchronized (stats) {
             return stats.values().toArray(new Stat[0]);
@@ -56,11 +56,11 @@ public class StatisticsProvider implements ParserCallback, StatisticsProviderMBe
 
     public void close() {
 
-        for (Stat s : getStats()) {
+        for (final Stat s : getStats()) {
             if (s.getName() != null) {
                 try {
                     server.unregisterMBean(s.getName());
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     LogLog.warn(e.getMessage(), e);
                 }
             }
@@ -69,35 +69,37 @@ public class StatisticsProvider implements ParserCallback, StatisticsProviderMBe
         server = null;
     }
 
-    public void update(String type, String subType, long time) {
-        if (time > 3722801423L)
+    @Override
+    public void update(final String type, final String subType, final long time) {
+        if (time > 3722801423L) {
             return; // do not log large values do to bug in CS when turning on
-                    // time debug.
-        Stat s = "sql".equals(type) ? getStat(type, getStatementType(subType)) : getStat(type, subType);
+        }
+        // time debug.
+        final Stat s = "sql".equals(type) ? getStat(type, getStatementType(subType)) : getStat(type, subType);
         s.update(time);
 
     }
 
-    private String getStatementType(String s) {
+    private String getStatementType(final String s) {
 
-        int t = s == null ? -1 : s.trim().indexOf(" ");
+        final int t = s == null ? -1 : s.trim().indexOf(" ");
         if (t != -1) {
             return s.substring(0, t).toLowerCase();
         }
         return "unknown";
     }
 
-    private Stat getStat(String type, String subType) {
-        String n = subType != null ? (type + "-" + subType) : type;
+    private Stat getStat(final String type, final String subType) {
+        final String n = subType != null ? (type + "-" + subType) : type;
         Stat s = stats.get(n);
         if (s == null) {
             ObjectName name = null;
             try {
                 name = new ObjectName("com.fatwire.gst.web.servlet:type=StatFromTimeDebug,group=" + type
                         + (subType != null ? ",subType=" + subType : ""));
-            } catch (MalformedObjectNameException e) {
+            } catch (final MalformedObjectNameException e) {
                 LogLog.warn(e.getMessage(), e);
-            } catch (NullPointerException e) {
+            } catch (final NullPointerException e) {
                 LogLog.warn(e.getMessage(), e);
             }
             s = new Stat();
@@ -108,11 +110,11 @@ public class StatisticsProvider implements ParserCallback, StatisticsProviderMBe
             if (name != null) {
                 try {
                     this.server.registerMBean(s, name);
-                } catch (InstanceAlreadyExistsException e) {
+                } catch (final InstanceAlreadyExistsException e) {
                     LogLog.warn(e.getMessage(), e);
-                } catch (MBeanRegistrationException e) {
+                } catch (final MBeanRegistrationException e) {
                     LogLog.warn(e.getMessage(), e);
-                } catch (NotCompliantMBeanException e) {
+                } catch (final NotCompliantMBeanException e) {
                     LogLog.warn(e.getMessage(), e);
                 }
             }
@@ -131,12 +133,13 @@ public class StatisticsProvider implements ParserCallback, StatisticsProviderMBe
     /**
      * @param server the server to set
      */
-    public void setServer(MBeanServer server) {
+    public void setServer(final MBeanServer server) {
         this.server = server;
     }
 
+    @Override
     public void reset() {
-        for (Stat s : getStats()) {
+        for (final Stat s : getStats()) {
             s.reset();
         }
     }
